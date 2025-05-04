@@ -2,11 +2,16 @@ import pandas as pd
 import time
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+import os
+import sys
 
-# Load data
-races = pd.read_csv("data/races.csv")
-lap_times = pd.read_csv("data/lap_times.csv")
-results = pd.read_csv("data/results.csv")
+currentdir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, currentdir)
+
+races = pd.read_csv(os.path.join(currentdir, "data", "races.csv"))
+lap_times = pd.read_csv(os.path.join(currentdir, "data", "lap_times.csv"))    
+results = pd.read_csv(os.path.join(currentdir, "data", "results.csv"))
+driver_standings = pd.read_csv(os.path.join(currentdir, "data", "driver_standings.csv"))
 
 # Prepare a list for all observations; each observation is a dict of features and corresponding ground truth
 all_samples = []
@@ -15,12 +20,16 @@ all_samples = []
 for race_id in races['raceId']:
     # For each race, reset history for computing per-driver average lap time
     driver_history = {}
-    
+    driver_standings_race = driver_standings[driver_standings['raceId'] == race_id]
     # Since finishing positions come from the results file, get those now.
     results_race = results[results['raceId'] == race_id]
     finishing_positions = results_race[['driverId', 'position']].set_index('driverId').to_dict()['position']
     # In case a finishing position is missing, we default to 20.
     
+    max_points_session = driver_standings_race['points'].max()
+    if max_points_session == 0:
+        max_points_session = 1
+
     # Get the race name and year (can be used later for plotting, if desired)
     race_info = races[races['raceId'] == race_id].iloc[0]
     
@@ -74,7 +83,13 @@ for race_id in races['raceId']:
                 pos = int(pos)
             except:
                 pos = 20
-            
+
+
+            if driver_standings_race[driver_standings_race['driverId'] == driver_id].empty:
+                print(f"Driver {driver_id} not found in driver")
+                normslized_driver_standing = 0
+            else:
+                normslized_driver_standing = float(driver_standings_race[driver_standings_race['driverId'] == driver_id]['points'].values[0] / max_points_session)
             sample = {
                 "race_id": race_id,
                 "driver_id": driver_id,
@@ -83,7 +98,8 @@ for race_id in races['raceId']:
                 "average_normalized_lap": avg_norm,
                 "lap_progress": row.lap_progress,
                 "current_position_norm": current_rank_norm,
-                "finishing_position": pos
+                "finishing_position": pos,
+                "normalized_driver_standing": normslized_driver_standing,
             }
             all_samples.append(sample)
     
