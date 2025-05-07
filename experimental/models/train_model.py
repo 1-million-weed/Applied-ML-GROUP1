@@ -3,8 +3,8 @@ import keras
 import numpy as np
 import matplotlib.pyplot as plt
 
-train_data = pd.read_csv("data/train_data.csv")
-test_data = pd.read_csv("data/test_data.csv")
+train_data = pd.read_csv(r"f1_predictor\data\train_data.csv")
+test_data = pd.read_csv(r"f1_predictor\data\test_data.csv")
 print
 x_train = train_data[['normalized_lap','average_normalized_lap','lap_progress','current_position_norm']]
 y_train = train_data['finishing_position']
@@ -22,7 +22,7 @@ model = keras.Sequential([
     keras.layers.Dense(1, activation='linear')
 ])
 model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-history = model.fit(x_train, y_train, epochs=100, batch_size=32, validation_split=0.2)
+history = model.fit(x_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
 loss, mae = model.evaluate(x_test, y_test)
 print(f"Test Loss: {loss}, Test MAE: {mae}")
 
