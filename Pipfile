@@ -9,6 +9,7 @@ matplotlib = "*"
 keras = "*"
 tensorflow = "*"
 scikit-learn = "*"
+fastf1 = "*"
 
 [dev-packages]
 
