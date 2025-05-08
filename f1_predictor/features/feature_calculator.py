@@ -57,7 +57,6 @@ class CalculateSamplesRace:
                 except:
                     pos = 20
 
-
                 if self.driver_standings[self.driver_standings['driverId'] == driver_id].empty:
                     print(f"Driver {driver_id} not found in driver")
                     normslized_driver_standing = 0

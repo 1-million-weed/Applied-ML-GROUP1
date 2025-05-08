@@ -63,3 +63,16 @@ class DataFolderManager():
         train_data.to_csv(os.path.join(self.data_folder ,"train_data.csv"), index=False)
         test_data.to_csv(os.path.join(self.data_folder ,"test_data.csv"), index=False)
         print("CSV files saved: data/train_data.csv and data/test_data.csv")
+
+    def verify_csv_files(self):
+        """
+        Verify if the CSV files exist in the data folder.
+        """
+        train_file = os.path.join(self.data_folder, "train_data.csv")
+        test_file = os.path.join(self.data_folder, "test_data.csv")
+        if os.path.exists(train_file) and os.path.exists(test_file):
+            print("CSV files exist.")
+            return True
+        else:
+            print("CSV files do not exist.")
+            return False
