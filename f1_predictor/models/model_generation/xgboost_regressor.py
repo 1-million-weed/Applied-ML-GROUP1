@@ -2,6 +2,7 @@ from f1_predictor.models.model_generation.model import Model
 from xgboost import XGBRegressor as WrappedXGBRegressor
 from typing import Tuple
 import matplotlib.pyplot as plt
+from xgboost import plot_importance
 
 import numpy as np
 import os
@@ -109,7 +110,7 @@ class XGBRegressor(Model):
         :param max_num_features: Maximum number of features to plot.
         """
         plt.figure(figsize=(10, 6))
-        xgb.plot_importance(self._model, max_num_features=max_num_features)
+        plot_importance(self._model, max_num_features=max_num_features)
         plt.title("Feature Importance")
         plt.xlabel("Importance Score")
         plt.ylabel("Features")
