@@ -10,5 +10,6 @@ class DatasetLoader:
         self.lap_times = pd.read_csv(os.path.join(data_dir, "lap_times.csv"))
         self.results = pd.read_csv(os.path.join(data_dir, "results.csv"))
         self.driver_standings = pd.read_csv(os.path.join(data_dir, "driver_standings.csv"))
+        self.qualifying = pd.read_csv(os.path.join(data_dir, "qualifying.csv"))
 
     

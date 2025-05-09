@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 class RandomForest(Model):
@@ -19,7 +19,7 @@ class RandomForest(Model):
         _model (RandomForestRegressor): The RandomForestRegressor instance.
     """
 
-    def __init__(self, n_trees: int = 100, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 50) -> None:
+    def __init__(self, n_trees: int = 1000, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 100) -> None:
         """
         Initializes the RandomForest model with given hyperparameters.
 
@@ -66,23 +66,74 @@ class RandomForest(Model):
 
     def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
         """
-        Evaluates the model on the test data.
+        Evaluates the classification model on the test data.
 
         Args:
             x_test (np.ndarray): Test input features.
             y_test (np.ndarray): Test target values.
 
         Returns:
-            dict: Evaluation metrics including MSE and R2 score.
+            dict: Evaluation metrics including accuracy, precision, recall, and F1-score.
         """
         y_test_pred = self.predict(x_test)
-        mse = mean_squared_error(y_test, y_test_pred)
-        r2 = r2_score(y_test, y_test_pred)
+        
+        # Calculate accuracy
+        accuracy = accuracy_score(y_test, y_test_pred)
+        
+        # Generate classification report
+        report = classification_report(y_test, y_test_pred, output_dict=True)
+        
+        # Generate confusion matrix
+        conf_matrix = confusion_matrix(y_test, y_test_pred)
+        
+        print(f"Accuracy: {accuracy:.4f}")
+        print("\nClassification Report:")
+        print(classification_report(y_test, y_test_pred))
+        
+        # Plot confusion matrix if desired
+        self._plot_confusion_matrix(conf_matrix, classes=np.unique(y_test))
+        
+        return {
+            "accuracy": accuracy,
+            "report": report,
+            "confusion_matrix": conf_matrix
+        }
 
-        print(f"Mean Squared Error: {mse}")
-        print(f"R2 Score: {r2}")
-
-        return {"mse": mse, "r2": r2}
+    def _plot_confusion_matrix(self, cm, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
+        """
+        Plots the confusion matrix.
+        
+        Args:
+            cm (np.ndarray): Confusion matrix
+            classes (list): List of class labels
+            normalize (bool): Whether to normalize the confusion matrix
+            title (str): Title for the plot
+            cmap: Colormap for the plot
+        """
+        if normalize:
+            cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        
+        plt.figure(figsize=(10, 8))
+        plt.imshow(cm, interpolation='nearest', cmap=cmap)
+        plt.title(title)
+        plt.colorbar()
+        
+        tick_marks = np.arange(len(classes))
+        plt.xticks(tick_marks, classes)
+        plt.yticks(tick_marks, classes)
+        
+        fmt = '.2f' if normalize else 'd'
+        thresh = cm.max() / 2.
+        for i in range(cm.shape[0]):
+            for j in range(cm.shape[1]):
+                plt.text(j, i, format(cm[i, j], fmt),
+                        horizontalalignment="center",
+                        color="white" if cm[i, j] > thresh else "black")
+        
+        plt.tight_layout()
+        plt.ylabel('True Position')
+        plt.xlabel('Predicted Position')
+        plt.show()
 
 
 

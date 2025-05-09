@@ -19,10 +19,9 @@ class MultiLayerPerceptron(Model):
         self.num_classes = num_classes
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
-            keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(32, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
+            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
+            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
+            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
             keras.layers.Dense(num_classes, activation='softmax')  # Output layer for classification
         ])
         self._model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -120,7 +119,6 @@ class MultiLayerPerceptron(Model):
         loss, accuracy = self._model.evaluate(x_test, y_test)
         print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
         return {"loss": loss, "accuracy": accuracy}
-        #plots real vs predicted?
         
 
 
