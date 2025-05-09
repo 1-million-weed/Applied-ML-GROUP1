@@ -64,32 +64,27 @@ class RandomForest(Model):
         """
         return self._model.predict(x)
 
-    def evaluate(self, x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
         """
-        Evaluates the model and returns performance metrics.
+        Evaluates the model on the test data.
 
         Args:
-            X_train (np.ndarray): Training data.
-            y_train (np.ndarray): Training target values.
-            X_test (np.ndarray): Test data.
+            x_test (np.ndarray): Test input features.
             y_test (np.ndarray): Test target values.
 
         Returns:
-            dict: A dictionary containing evaluation metrics.
+            dict: Evaluation metrics including MSE and R2 score.
         """
-        y_train_pred = self.predict(x_train)
         y_test_pred = self.predict(x_test)
+        mse = mean_squared_error(y_test, y_test_pred)
+        r2 = r2_score(y_test, y_test_pred)
 
-        metrics = {
-            "train_mse": mean_squared_error(y_train, y_train_pred),
-            "test_mse": mean_squared_error(y_test, y_test_pred),
-            "train_rmse": np.sqrt(mean_squared_error(y_train, y_train_pred)),
-            "test_rmse": np.sqrt(mean_squared_error(y_test, y_test_pred)),
-            "train_r2": r2_score(y_train, y_train_pred),
-            "test_r2": r2_score(y_test, y_test_pred),
-        }
+        print(f"Mean Squared Error: {mse}")
+        print(f"R2 Score: {r2}")
 
-        return metrics
+        return {"mse": mse, "r2": r2}
+
+
 
     def plot_feature_importance(self, feature_names: list) -> None:
         """

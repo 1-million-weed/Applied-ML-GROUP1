@@ -119,6 +119,7 @@ class MultiLayerPerceptron(Model):
             
         loss, accuracy = self._model.evaluate(x_test, y_test)
         print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
+        return {"loss": loss, "accuracy": accuracy}
         #plots real vs predicted?
         
 

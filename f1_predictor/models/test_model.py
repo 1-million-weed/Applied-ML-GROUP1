@@ -4,7 +4,7 @@ from .dataset_manager import DatasetManager
 class ModelTester:
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.available_models = ["RandomForestClassifier", "XGBRegressor", "MultilayerPerceptron"]
+        self.available_models = ["RandomForestClassifier", "XGBRegressor", "MultiLayerPerceptron"]
         if model_name not in self.available_models:
             raise ValueError(f"Model {model_name} is not available. Available models are: {self.available_models}")
         else:
@@ -22,4 +22,4 @@ class ModelTester:
         """
         Test the model using the validation data.
         """
-        print(self.model.evaluate(x_test=self.x_val, y_test=self.y_val))
+        metrics = self.model.evaluate(x_test=self.x_val, y_test=self.y_val)

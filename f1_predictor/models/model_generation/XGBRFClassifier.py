@@ -1,5 +1,5 @@
 from f1_predictor.models.model_generation.model import Model
-from xgboost import XGBRegressor as WrappedXGBRegressor
+from xgboost import XGBRFClassifier as WrappedXGBRFClassifier
 from typing import Tuple
 import matplotlib.pyplot as plt
 from xgboost import plot_importance
@@ -13,7 +13,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 
-class XGBRegressor(Model):
+class XGBRFClassifier(Model):
     """ XGBoost for regression wrapper """
 
     def __init__(self,
@@ -35,7 +35,7 @@ class XGBRegressor(Model):
         max_depth, learning_rate, n_estimators, gamma = \
             self._validate_parameters(max_depth, learning_rate, n_estimators,
                                       gamma)
-        self._model = WrappedXGBRegressor(max_depth=max_depth,
+        self._model = WrappedXGBRFClassifier(max_depth=max_depth,
                                           learning_rate=learning_rate,
                                           n_estimators=n_estimators,
                                           gamma=gamma)
@@ -125,3 +125,4 @@ class XGBRegressor(Model):
         y_pred = self.predict(x_test)
         mse = np.mean((y_test - y_pred) ** 2)
         print(f"Mean Squared Error: {mse}")
+        return {"mse": mse}
