@@ -114,3 +114,13 @@ class XGBRegressor(Model):
         plt.xlabel("Importance Score")
         plt.ylabel("Features")
         plt.show()
+
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
+        """
+        Evaluate the model on the test data.
+        :param x_test: Test input features as a numpy array.
+        :param y_test: Test target values as a numpy array.
+        """
+        y_pred = self.predict(x_test)
+        mse = np.mean((y_test - y_pred) ** 2)
+        print(f"Mean Squared Error: {mse}")

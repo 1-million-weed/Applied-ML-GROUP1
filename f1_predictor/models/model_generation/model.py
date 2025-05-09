@@ -46,6 +46,17 @@ class Model(ABC):
         """
         pass
 
+    @abstractmethod
+    def evaluate(self, x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray) -> None:
+        """
+        Evaluate the model on the test data.
+
+        Args:
+            x_test: Test input features as a numpy array.
+            y_test: Test target values as a numpy array.
+        """
+        pass
+
     @property
     def parameters(self) -> dict:
         """ Returns a copy of parameters to prevent leakage. """

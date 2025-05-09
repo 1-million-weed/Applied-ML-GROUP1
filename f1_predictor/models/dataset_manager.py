@@ -6,7 +6,7 @@ class DatasetManager:
         currentdir = os.path.dirname(os.path.abspath(__file__))
         parentdir = os.path.dirname(currentdir)
         self.data_folder = os.path.join(parentdir, 'data')
-        required_columns = []
+        self.required_columns = []
 
     def _check_required_columns(self, df):
         for column in self.required_columns:

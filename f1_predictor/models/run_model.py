@@ -3,7 +3,7 @@ from model_manager import Modelmanager
 class ModelRunner:
     def __init__(self, model_name: str):
         self.model_name = model_name
-        self.available_models = ["RadnomForestClassifier", "XGBRegressor", "MultilayerPerceptron"]
+        self.available_models = ["RandomForestClassifier", "XGBRegressor", "MultilayerPerceptron"]
         if model_name not in self.available_models:
             raise ValueError(f"Model {model_name} is not available. Available models are: {self.available_models}")
         else:
