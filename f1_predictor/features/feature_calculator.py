@@ -107,8 +107,11 @@ class CalculateSamplesRace:
                 pos = finishing_positions.get(driver_id, 20)
                 try:
                     pos = int(pos)
+                    if pos > 20:
+                        pos = 20
                 except:
-                    pos = 20
+                    continue
+                
 
                 # Get driver standings data safely
                 driver_standings_rows = self.driver_standings[self.driver_standings['driverId'] == driver_id]
