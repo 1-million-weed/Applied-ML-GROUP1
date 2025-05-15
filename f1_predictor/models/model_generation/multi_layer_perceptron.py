@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import to_categorical
+import datetime
+import tensorflow as tf
 from tensorflow import keras
 from .model import Model
 
@@ -26,7 +28,7 @@ class MultiLayerPerceptron(Model):
         ])
         self._model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 50, batch_size: int = 16, validation_split: float = 0.2) -> None:
+    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 50, batch_size: int = 2**12, validation_split: float = 0.2) -> None:
         """
         Train the model on the given observations and ground truth.
         
@@ -55,7 +57,8 @@ class MultiLayerPerceptron(Model):
             
         # Convert to one-hot encoding
         one_hot_ground_truth = to_categorical(ground_truth_array, num_classes=self.num_classes)
-
+        log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
         early_stopping = keras.callbacks.EarlyStopping(
             monitor='val_loss',
             patience=10,
@@ -69,7 +72,7 @@ class MultiLayerPerceptron(Model):
             epochs=epochs, 
             batch_size=batch_size, 
             validation_split=validation_split,
-            callbacks=[early_stopping]
+            callbacks=[early_stopping, tensorboard_callback]
         )
 
 
@@ -136,3 +139,4 @@ class MultiLayerPerceptron(Model):
         plt.show()
 
     
+#tensorboard --logdir logs/fit
