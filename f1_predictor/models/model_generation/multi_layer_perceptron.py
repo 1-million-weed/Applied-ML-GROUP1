@@ -6,6 +6,7 @@ import datetime
 import tensorflow as tf
 from tensorflow import keras
 from .model import Model
+import os
 
 class MultiLayerPerceptron(Model):
     def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20) -> None:
@@ -74,6 +75,7 @@ class MultiLayerPerceptron(Model):
             validation_split=validation_split,
             callbacks=[early_stopping, tensorboard_callback]
         )
+        os.system("tensorboard --logdir logs/fit")
 
 
     def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:
@@ -139,4 +141,3 @@ class MultiLayerPerceptron(Model):
         plt.show()
 
     
-#tensorboard --logdir logs/fit
