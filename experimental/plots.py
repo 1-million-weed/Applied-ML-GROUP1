@@ -3,7 +3,7 @@ import random
 import sys
 import matplotlib.pyplot as plt
 
-from f1_predictor.dataset import Dataset
+from experimental.data_preprocessing.dataset import Dataset
 
 folder_path = os.path.join(os.path.dirname(__file__), "data")
 dataset_files = os.listdir(folder_path)
