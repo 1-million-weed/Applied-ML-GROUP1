@@ -14,7 +14,8 @@ if __name__ == "__main__":
     #load datasets
     datasets = DatasetLoader()
     all_samples = []
-    for race_id in datasets.races['raceId']:
+    #for race_id in datasets.races['raceId']:
+    for race_id in range(1031, 1144):
         driver_standings_race = datasets.driver_standings[datasets.driver_standings['raceId'] == race_id]
         results_race = datasets.results[datasets.results['raceId'] == race_id]
         laptimes_race = datasets.lap_times[datasets.lap_times['raceId'] == race_id]

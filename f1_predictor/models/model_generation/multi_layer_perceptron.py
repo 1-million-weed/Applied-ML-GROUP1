@@ -22,14 +22,16 @@ class MultiLayerPerceptron(Model):
         self.num_classes = num_classes
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
-            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(16, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001)),
+            keras.layers.Dense(16, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
+            keras.layers.Dense(16, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
+            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
+            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
+            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
             keras.layers.Dense(num_classes, activation='softmax')  # Output layer for classification
         ])
         self._model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 50, batch_size: int = 2**12, validation_split: float = 0.2) -> None:
+    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 100, batch_size: int = 2**3, validation_split: float = 0.2) -> None:
         """
         Train the model on the given observations and ground truth.
         
