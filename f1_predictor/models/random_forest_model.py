@@ -1,4 +1,4 @@
-from f1_predictor.models.model_generation.model import Model
+from f1_predictor.models.model import Model
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

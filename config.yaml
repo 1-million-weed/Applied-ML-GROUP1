@@ -1,0 +1,39 @@
+# ===============================
+# Model Configuration
+# ===============================
+model:
+  name: "MultiLayerPerceptron"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
+
+# ===============================
+# Dataset Configuration
+# ===============================
+dataset: 
+  generate: false
+  test_size: 0.2
+  random_state: 42
+  empty_folder: true
+
+# ===============================
+# Training Configuration
+# ===============================
+training:
+  enabled: true
+  test_size: 0.2
+  show_plot: true   #todo
+  ground_truth: "finishing_position"
+  training_features: ['normalized_lap', 'average_normalized_lap', 'lap_progress', 'current_position_norm', 'normalized_driver_standing', 'normalized_fastest_qualifying', 'position_quali', 'normalized_driver_elo' , 'amount_of_wins', 'points_team']
+  tensorboard: true   #todo
+
+# ===============================
+# Testing Configuration
+# ===============================
+
+testing:
+  enabled: true
+  show_plot: true 
+
+# ===============================
+# Inference Configuration
+# ===============================
+inference:
+  enabled: false

@@ -1,4 +1,4 @@
-from f1_predictor.models.model_generation.model import Model
+from f1_predictor.models.model import Model
 from xgboost import XGBClassifier as WrappedXGBClassifier
 from typing import Tuple
 import matplotlib.pyplot as plt
