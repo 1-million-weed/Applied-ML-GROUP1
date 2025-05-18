@@ -22,8 +22,8 @@ class MultiLayerPerceptron(Model):
         self.num_classes = num_classes
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
-            keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.005)),
-            keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.005)),
+            keras.layers.Dense(16, activation='linear', kernel_regularizer=keras.regularizers.l2(0.001)),
+            keras.layers.Dense(16, activation='linear'),
 
             #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
             #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
@@ -32,7 +32,7 @@ class MultiLayerPerceptron(Model):
         ])
         self._model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 1000, batch_size: int = 2**5, validation_split: float = 0.2) -> None:
+    def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 300, batch_size: int = 2**12, validation_split: float = 0.2) -> None:
         """
         Train the model on the given observations and ground truth.
         
@@ -49,7 +49,7 @@ class MultiLayerPerceptron(Model):
         
         # Check for and handle positions that are outside the expected range
         max_position = ground_truth_array.max()
-        if max_position >= self.num_classes:
+        if max_position > self.num_classes:
             print(f"Warning: Found finishing positions up to {max_position}, which exceeds the model's output size of {self.num_classes}.")
             print(f"Limiting positions to range 0-{self.num_classes-1}.")
             # Clip values to be within valid range for one-hot encoding
@@ -115,7 +115,7 @@ class MultiLayerPerceptron(Model):
             y_test_array = np.array(y_test).flatten()
             
             # Handle values outside the expected range
-            if y_test_array.max() >= self.num_classes:
+            if y_test_array.max() > self.num_classes:
                 print(f"Warning: Test data contains positions up to {y_test_array.max()}, clipping to range 0-{self.num_classes-1}")
                 y_test_array = np.clip(y_test_array, 0, self.num_classes-1)
                 
@@ -123,7 +123,7 @@ class MultiLayerPerceptron(Model):
                 y_test_array = y_test_array - 1
                 
             y_test = to_categorical(y_test_array, num_classes=self.num_classes)
-            
+        self.plot_confusion_matrix(y_test, self.predict(x_test))
         loss, accuracy = self._model.evaluate(x_test, y_test)
         print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
         return {"loss": loss, "accuracy": accuracy}
@@ -141,6 +141,29 @@ class MultiLayerPerceptron(Model):
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.legend()
+        plt.show()
+
+    def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray) -> None:
+        """
+        Plot the confusion matrix for the model predictions.
+
+        Args:
+            y_true: True labels (one-hot encoded or single-label).
+            y_pred: Predicted labels (single-label).
+        """
+        from sklearn.metrics import confusion_matrix
+        import seaborn as sns
+
+        # Convert y_true from one-hot encoding to single-label format if necessary
+        if len(y_true.shape) > 1 and y_true.shape[1] > 1:
+            y_true = np.argmax(y_true, axis=1)
+
+        cm = confusion_matrix(y_true, y_pred)
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted Label')
+        plt.ylabel('True Label')
         plt.show()
 
     

@@ -20,6 +20,7 @@ if __name__ == "__main__":
         results_race = datasets.results[datasets.results['raceId'] == race_id]
         laptimes_race = datasets.lap_times[datasets.lap_times['raceId'] == race_id]
         qualifying_race = datasets.qualifying[datasets.qualifying['raceId'] == race_id]
+        constructor_standings_race = datasets.constructor_standings[datasets.constructor_standings['raceId'] == race_id]
         if laptimes_race.empty:
             print(f"No lap times available for race_id {race_id}. Skipping.")
             continue
@@ -27,7 +28,8 @@ if __name__ == "__main__":
                                                 laptimes=laptimes_race,
                                                 results=results_race,
                                                 driver_standings=driver_standings_race,
-                                                qualifying=qualifying_race)
+                                                qualifying=qualifying_race,
+                                                constructor_standings=constructor_standings_race)
         all_samples += feature_calculator.calculate_samples()
 
     df_samples = pd.DataFrame(all_samples)
