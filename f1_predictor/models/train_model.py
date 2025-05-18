@@ -17,6 +17,7 @@ class Modeltrainer:
         
         self.training_data = dataset_manager.get_training_data()
         self.training_features = self.training_data.drop(columns=['finishing_position', 'race_id', 'driver_id', 'lap'])
+        #self.training_features = self.training_data[['position_quali','normalized_driver_elo']]
         self.ground_truth = self.training_data['finishing_position']
 
         if model_name == "XGBClassifier":

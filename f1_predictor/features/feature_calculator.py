@@ -68,6 +68,14 @@ class CalculateSamplesRace:
         max_points_session = self.driver_standings['points'].max()
         if max_points_session == 0:
             max_points_session = 1
+        # Normalize the points column
+        self.driver_standings['points'] = self.driver_standings['points'] / max_points_session
+
+        max_elo_session = self.driver_standings['elo'].max()
+        if max_elo_session == 0:
+            max_elo_session = 1
+        # Normalize the elo column
+        self.driver_standings['normalized_elo'] = self.driver_standings['elo'] / max_elo_session
         
         finishing_positions = self.results[['driverId', 'position']].set_index('driverId').to_dict()['position']
         current_shortest = float('inf')
@@ -114,12 +122,12 @@ class CalculateSamplesRace:
                 
 
                 # Get driver standings data safely
-                driver_standings_rows = self.driver_standings[self.driver_standings['driverId'] == driver_id]
-                if driver_standings_rows.empty:
+                driver_standings_row = self.driver_standings[self.driver_standings['driverId'] == driver_id]
+                if driver_standings_row.empty:
                     print(f"Driver {driver_id} not found in driver standings")
                     normalized_driver_standing = 0
                 else:
-                    normalized_driver_standing = float(driver_standings_rows['points'].values[0] / max_points_session)
+                    normalized_driver_standing = driver_standings_row['points'].values[0]
 
                 # Get qualifying data safely
                 qualifying_rows = self.qualifying[self.qualifying['driverId'] == driver_id]
@@ -129,6 +137,15 @@ class CalculateSamplesRace:
                 else:
                     normalized_fastest_qualifying = qualifying_rows['normalized_fastest_qualifying'].values[0]
                     position_quali = qualifying_rows['position'].values[0]
+
+                normalized_driver_elo = self.driver_standings[self.driver_standings['driverId'] == driver_id]['normalized_elo']
+                if normalized_driver_elo.empty:
+                    normalized_driver_elo = 0
+                else:
+                    if len(normalized_driver_elo) > 1:
+                        raise ValueError(f"Multiple rows found for driver {driver_id} in driver standings")
+                    normalized_driver_elo = normalized_driver_elo.values[0]
+                
                 
                 sample = {
                     "race_id": self.race_id,
@@ -142,6 +159,7 @@ class CalculateSamplesRace:
                     "normalized_driver_standing": normalized_driver_standing,
                     "normalized_fastest_qualifying": normalized_fastest_qualifying,
                     "position_quali": position_quali,
+                    "normalized_driver_elo": normalized_driver_elo,
                 }
                 samples.append(sample)
         return samples

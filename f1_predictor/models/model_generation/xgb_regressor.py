@@ -20,7 +20,7 @@ class XGBRegressor(Model):
                  max_depth: int = 6,
                  learning_rate: float = 0.1,
                  n_estimators: int = 100,
-                 gamma: float = 0.0,
+                 gamma: float = 0.01,
                  ) -> None:
         """
         Initialize the XGBoost model with various hyperparameters,
@@ -124,6 +124,12 @@ class XGBRegressor(Model):
         """
         y_pred = self.predict(x_test)
         mse = np.mean((y_test - y_pred) ** 2)
+        print("Sample predictions:")
+        print(y_pred[:5])
+        print("Sample ground truth:")
+        print(y_test[:5])
+
+
         print(f"Mean Squared Error: {mse}")
         return {
             "mse": mse,

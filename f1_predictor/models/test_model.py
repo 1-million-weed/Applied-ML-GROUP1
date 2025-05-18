@@ -16,6 +16,7 @@ class ModelTester:
         self.y_train = self.training_data['finishing_position']
         self.validation_data = dataset_manager.get_validation_data()
         self.x_val = self.validation_data.drop(columns=['finishing_position', 'race_id', 'driver_id', 'lap'])
+        #self.x_val = self.validation_data[['position_quali','normalized_driver_elo']]
         self.y_val = self.validation_data['finishing_position']
 
     def test(self):
