@@ -104,8 +104,11 @@ class Pipeline:
 
     def inference(self):
         model = self.model_manager.load_model()
-        API(model)
-        app = HomePage()
-        app.display()
+        if self.api:
+            API(model)
+        
+        if self.streamlit:
+            app = HomePage()
+            app.display()
 
         
