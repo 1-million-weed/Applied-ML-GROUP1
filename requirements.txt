@@ -6,3 +6,5 @@ pandas==2.2.3
 scikit-learn==1.6.1
 tensorflow==2.19.0
 pyyaml==6.0.2
+fastapi==0.115.12
+streamlit==1.45.1

@@ -8,6 +8,45 @@ from tensorflow import keras
 from .model import Model
 import os
 
+@tf.keras.utils.register_keras_serializable()
+class OrdinalCrossentropy:
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+
+    def __call__(self, y_true, y_pred):
+        y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0)
+        true_labels = tf.argmax(y_true, axis=-1)
+
+        class_indices = tf.range(self.num_classes, dtype=tf.float32)
+        class_indices = tf.reshape(class_indices, (1, -1))  # shape: [1, num_classes]
+        true_labels_float = tf.cast(tf.expand_dims(true_labels, axis=-1), tf.float32)
+        distances = tf.abs(class_indices - true_labels_float)  # shape: [batch, num_classes]
+
+        # Normalize and square distance to penalize larger mistakes more
+        max_distance = tf.constant(self.num_classes - 1, dtype=tf.float32)
+        normalized_dist = distances / max_distance
+        weighted_ce = -y_true * tf.math.log(y_pred) * (1.0 + tf.square(normalized_dist))
+
+        return tf.reduce_mean(tf.reduce_sum(weighted_ce, axis=-1))
+
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def get_config(self):
+        """
+        Returns the configuration of the loss function for serialization.
+        """
+        return {"num_classes": self.num_classes}
+
+    @classmethod
+    def from_config(cls, config):
+        """
+        Instantiates the class from its configuration.
+        """
+        return cls(**config)
+
 class MultiLayerPerceptron(Model):
     def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20) -> None:
         """
@@ -22,15 +61,17 @@ class MultiLayerPerceptron(Model):
         self.num_classes = num_classes
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
-            keras.layers.Dense(16, activation='linear', kernel_regularizer=keras.regularizers.l2(0.001)),
-            keras.layers.Dense(16, activation='linear'),
-
-            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
-            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
-            #keras.layers.Dense(8, activation='linear', kernel_regularizer=keras.regularizers.l2(0.005)),
-            keras.layers.Dense(num_classes, activation='softmax')  # Output layer for classification
+            keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
         ])
-        self._model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        
+        # Add 1000 layers dynamically
+        for _ in range(3):
+            self._model.add(keras.layers.Dense(100, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
+
+        # Add the output layer
+        self._model.add(keras.layers.Dense(num_classes, activation='softmax'))  # Output layer for classification
+        
+        self._model.compile(optimizer='adam', loss=OrdinalCrossentropy(num_classes), metrics=['accuracy'])
 
     def fit(self, observations: np.ndarray, ground_truth: np.ndarray, epochs: int = 300, batch_size: int = 2**12, validation_split: float = 0.2) -> None:
         """
@@ -166,4 +207,4 @@ class MultiLayerPerceptron(Model):
         plt.ylabel('True Label')
         plt.show()
 
-    
+

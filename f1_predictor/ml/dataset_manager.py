@@ -30,3 +30,10 @@ class DatasetManager:
         val_data = pd.read_csv(val_data_path)
         self._check_required_columns(val_data)
         return val_data
+    
+    def validate_data(self, data):
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("Data must be a pandas DataFrame")
+        
+        self._check_required_columns(data)
+        return True
