@@ -17,7 +17,7 @@ dataset:
 # Training Configuration
 # ===============================
 training:
-  enabled: true
+  enabled: false
   test_size: 0.2
   show_plot: true   #todo
   ground_truth: "finishing_position"
@@ -25,15 +25,17 @@ training:
   tensorboard: true   #todo
 
 # ===============================
-# Testing Configuration
+# Eval Configuration
 # ===============================
 
 testing:
-  enabled: true
+  enabled: false
   show_plot: true 
 
 # ===============================
 # Inference Configuration
 # ===============================
 inference:
-  enabled: false
+  enabled: true
+  api: true
+  streamlit: true

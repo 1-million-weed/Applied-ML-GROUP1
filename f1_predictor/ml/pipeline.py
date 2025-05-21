@@ -5,6 +5,8 @@ from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
+from .api import API
+from ..app.homepage import HomePage
 
 
 class Pipeline:
@@ -32,6 +34,9 @@ class Pipeline:
         self.train_model = self.training_config['enabled']
         self.test_model = test_config['enabled']
         self.run_model = inference_config['enabled']
+
+        self.api = inference_config['api']
+        self.streamlit = inference_config['streamlit']
 
     def _get_model_manager(self, model_name):
         available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
@@ -99,4 +104,11 @@ class Pipeline:
 
     def inference(self):
         model = self.model_manager.load_model()
-        #return self.model.predict(observations)
+        if self.api:
+            API(model)
+        
+        if self.streamlit:
+            app = HomePage()
+            app.display()
+
+        
