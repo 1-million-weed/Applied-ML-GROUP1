@@ -11,13 +11,13 @@ def Formula1Predictor():
     model_config = config['model']
     dataset_config = config["dataset"]
     training_config = config["training"]
-    test_config = config["testing"]
+    eval_config = config["evaluation"]
     inference_config = config["inference"]
     pipeline = Pipeline(
         model_config=model_config,
         dataset_config=dataset_config,
         training_config=training_config,
-        test_config=test_config,
+        eval_config=eval_config,
         inference_config=inference_config,
     )
     pipeline.run()

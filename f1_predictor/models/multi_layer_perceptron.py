@@ -6,6 +6,7 @@ import datetime
 import tensorflow as tf
 from tensorflow import keras
 from .model import Model
+from threading import Thread
 import os
 
 @tf.keras.utils.register_keras_serializable()
@@ -61,12 +62,12 @@ class MultiLayerPerceptron(Model):
         self.num_classes = num_classes
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
-            keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
+            #keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
         ])
         
         # Add 1000 layers dynamically
-        for _ in range(3):
-            self._model.add(keras.layers.Dense(100, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
+        for _ in range(5):
+            self._model.add(keras.layers.Dense(256, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
 
         # Add the output layer
         self._model.add(keras.layers.Dense(num_classes, activation='softmax'))  # Output layer for classification
@@ -102,8 +103,8 @@ class MultiLayerPerceptron(Model):
             
         # Convert to one-hot encoding
         one_hot_ground_truth = to_categorical(ground_truth_array, num_classes=self.num_classes)
-        log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+        self.log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=self.log_dir, histogram_freq=1)
         early_stopping = keras.callbacks.EarlyStopping(
             monitor='val_loss',
             patience=10,
@@ -119,6 +120,7 @@ class MultiLayerPerceptron(Model):
             validation_split=validation_split,
             callbacks=[early_stopping, tensorboard_callback]
         )
+        # Start TensorBoard in a separate thread
         os.system("tensorboard --logdir logs/fit")
 
 
@@ -207,4 +209,14 @@ class MultiLayerPerceptron(Model):
         plt.ylabel('True Label')
         plt.show()
 
+    def run_tensorboard(self):
+        """
+        Start TensorBoard in a separate thread.
+        """
+        # Start TensorBoard in a separate thread
+        thread = Thread(target=self._start_tensorboard)
+        thread.start()
 
+
+    def _start_tensorboard(self):
+        os.system(f"tensorboard --logdir {self.log_dir}")
