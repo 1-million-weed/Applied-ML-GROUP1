@@ -121,7 +121,7 @@ class MultiLayerPerceptron(Model):
             callbacks=[early_stopping, tensorboard_callback]
         )
         # Start TensorBoard in a separate thread
-        os.system("tensorboard --logdir logs/fit")
+        self.run_tensorboard()
 
 
     def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:

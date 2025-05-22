@@ -5,6 +5,7 @@ from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
+from ..models.multi_layer_regression import MultiLayerRegression
 from .api import API
 from ..app.homepage import HomePage
 
@@ -39,7 +40,7 @@ class Pipeline:
         self.streamlit = inference_config['streamlit']
 
     def _get_model_manager(self, model_name):
-        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
+        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
         if model_name not in available_models:
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
         else:
@@ -68,6 +69,9 @@ class Pipeline:
             model = RandomForest()
         elif self.model_name == "MultiLayerPerceptron":
             model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+        elif self.model_name == "MultiLayerRegression":
+            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+
         model.fit(*self._load_training_data())
         self.model_manager.save_model(model)
         if self.train_plots:
