@@ -18,11 +18,10 @@ class MultiLayerRegression(Model):
         super().__init__(type)
         self.num_classes = num_classes
         inputs = keras.Input(shape=(input_shape,))
-        x = keras.layers.Dense(128, activation='relu')(inputs)
-        x = keras.layers.Dense(64, activation='relu')(x)
-        x = keras.layers.Dense(32, activation='relu')(x)
+        x = keras.layers.Dense(32, activation='relu')(inputs)
         x = keras.layers.Dense(16, activation='relu')(x)
         x = keras.layers.Dense(8, activation='relu')(x)
+        x = keras.layers.Dense(4, activation='relu')(x)
         outputs = keras.layers.Dense(1, activation='linear')(x)
 
         self._model = keras.Model(inputs=inputs, outputs=outputs)

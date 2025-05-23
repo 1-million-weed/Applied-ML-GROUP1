@@ -4,6 +4,8 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 from xgboost import plot_importance
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 import numpy as np
 import os
@@ -137,10 +139,27 @@ class XGBClassifier(Model):
         print(f"Precision: {precision}")
         print(f"Recall: {recall}")
         print(f"F1 Score: {f1}")
-
+        self.plot_confusion_matrix(y_test, y_pred)
         return {
             "accuracy": accuracy,
             "precision": precision,
             "recall": recall,
             "f1_score": f1
         }
+    
+
+    def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray) -> None:
+        """
+        Plot the confusion matrix for the model predictions.
+        
+        Args:
+            y_true: True labels as a numpy array.
+            y_pred: Predicted labels as a numpy array.
+        """
+        cm = confusion_matrix(y_true, y_pred)
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.show()

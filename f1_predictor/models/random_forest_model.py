@@ -19,7 +19,7 @@ class RandomForest(Model):
         _model (RandomForestRegressor): The RandomForestRegressor instance.
     """
 
-    def __init__(self, n_trees: int = 50, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 500) -> None:
+    def __init__(self, n_trees: int = 10, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 50) -> None:
         """
         Initializes the RandomForest model with given hyperparameters.
 
