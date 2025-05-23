@@ -116,22 +116,23 @@ def test_get_amount_of_wins_nonexistent_driver(full_calculator):
 
 
 # --- TESTS FOR _min_max_normalize --------------------------------------------
+
 # TODO: This is causing leakage since we normalize before splitting the data
 @pytest.mark.parametrize("series,expected", [
-    (pd.Series([1, 2, 3, 4, 5]),    pd.Series([0.0, 0.25, 0.5, 0.75, 1.0])),
-    (pd.Series([10, 20, 30]),       pd.Series([0.0, 0.5, 1.0])),
-    (pd.Series([5, 5, 5]),          pd.Series([5, 5, 5])),      # Constant values
-    (pd.Series([42]),               pd.Series([42])),           # Single value
-    (pd.Series([]),                 pd.Series([])),             # Empty series
-    (pd.Series([-10, -6, -2, 2, 6, 10]), pd.Series([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])), # Negative values
-
+    ([1, 2, 3, 4, 5],    [0.0, 0.25, 0.5, 0.75, 1.0]),
+    ([10, 20, 30],       [0.0, 0.5, 1.0]),
+    ([5, 5, 5],          [5, 5, 5]),      # Constant values
+    ([42],               [42]),           # Single value
+    ([],                 []),             # Empty series
+    ([-10, -6, -2, 2, 6, 10], [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]), # Negative values
 ])
 def test_min_max_normalize_normal_case(full_calculator, series, expected):
     """Test _min_max_normalize with normal data."""
     # TODO: Add a test for normal data
+    series = pd.Series(series)
+    expected = pd.Series(expected)
     result = full_calculator._min_max_normalize(series)
     pd_testing.assert_series_equal(result, expected)
-
 
 @pytest.mark.parametrize("invalid_input", [
     float('inf'),
@@ -149,15 +150,61 @@ def test_min_max_normalize_with_invalid_values(full_calculator, invalid_input):
 
 # --- TESTS FOR _get_team_points ----------------------------------------------
 
-@pytest.mark.parametrize("driver_id,expected", [
-    ("D1", 123),  # in driver_standings & constructor_standings
-    ("D2",   0),  # in driver_standings but no constructor row
-    ("D3",   0),  # not in driver_standings at all
+@pytest.mark.parametrize("driver_id,expected_points", [
+    ("D1", 150),  # TeamA - exists in constructor_standings
+    ("D2", 120),  # TeamB - exists in constructor_standings
+    ("D3", 90),   # TeamC - exists in constructor_standings
+    ("D4", 0),    # Empty constructor_name
+    ("D5", 0),    # NonExistentTeam - not in constructor_standings
+    ("NONEXISTENT", 0),  # Driver not in driver_standings
 ])
-def test_get_team_points(team_calculator, driver_id, expected):
-    """
-    Test the _get_team_points function.
-    """
-    pts = team_calculator._get_team_points(driver_id)
-    assert pts == expected
+def test_get_team_points(full_calculator, driver_id, expected_points):
+    """Test the _get_team_points function for various scenarios."""
+    pts = full_calculator._get_team_points(driver_id)
+    assert pts == expected_points
 
+# --- TESTS FOR _process_qualifying -------------------------------------------
+
+def test_process_qualifying(full_calculator):
+    """Test _process_qualifying processes all qualifying scenarios."""
+    # Store original qualifying data for comparison
+    original_q1 = full_calculator.qualifying['q1'].copy()
+
+    full_calculator._process_qualifying()
+
+    # Check that time conversion columns were added
+    expected_columns = ['q1_ms', 'q2_ms', 'q3_ms', 'fastest_time_ms', 'normalized_fastest_qualifying']
+    for col in expected_columns:
+        assert col in full_calculator.qualifying.columns
+
+    # Check that original data wasn't modified
+    pd.testing.assert_series_equal(full_calculator.qualifying['q1'], original_q1)
+
+    # Check specific time conversions
+    # D1's q1: "1:20.500" -> 80500ms
+    assert full_calculator.qualifying.loc[0, 'q1_ms'] == 80500
+
+    # Check that missing/invalid times were set to inf
+    d2_row = full_calculator.qualifying[full_calculator.qualifying['driverId'] == 'D2'].iloc[0]
+    assert d2_row['q3_ms'] == float('inf')  # Empty string
+
+    d3_row = full_calculator.qualifying[full_calculator.qualifying['driverId'] == 'D3'].iloc[0]
+    assert d3_row['q2_ms'] == 4 * 60 * 1000  # "\\N"
+    assert d3_row['q3_ms'] == 4 * 60 * 1000  # "bad:format"
+
+    # Check that fastest times were calculated
+    assert full_calculator.qualifying['fastest_time_ms'].notna().all()
+
+    # Check that normalization was applied
+    assert 0 <= full_calculator.qualifying['normalized_fastest_qualifying'].min() <= 1
+    assert 0 <= full_calculator.qualifying['normalized_fastest_qualifying'].max() <= 1
+
+    # Check position normalization
+    assert 0 <= full_calculator.qualifying['position'].min()
+    assert full_calculator.qualifying['position'].max() <= 1
+
+
+def test_process_qualifying_with_empty_data(mock_calculator):
+    """Test _process_qualifying with empty qualifying data."""
+    mock_calculator._process_qualifying()  # Should not crash
+    assert len(mock_calculator.qualifying) == 0
