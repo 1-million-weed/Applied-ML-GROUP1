@@ -5,6 +5,7 @@ from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
+from ..models.multi_layer_regression import MultiLayerRegression
 from .api import API
 from ..app.homepage import HomePage
 
@@ -14,13 +15,13 @@ class Pipeline:
         model_config,
         dataset_config,
         training_config,
-        test_config,
+        eval_config,
         inference_config,
     ):
         self.model_config = model_config
         self.dataset_config = dataset_config
         self.training_config = training_config
-        self.test_config = test_config
+        self.eval_config = eval_config
         self.inference_config = inference_config
 
         self.dataset_manager = DatasetManager()
@@ -28,18 +29,18 @@ class Pipeline:
         self.model_manager = self._get_model_manager(self.model_name)
 
         self.train_plots = training_config['show_plot']
-        self.test_plots = test_config['show_plot']
+        self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
         self.train_model = self.training_config['enabled']
-        self.test_model = test_config['enabled']
+        self.test_model = eval_config['enabled']
         self.run_model = inference_config['enabled']
 
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
 
     def _get_model_manager(self, model_name):
-        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
+        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
         if model_name not in available_models:
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
         else:
@@ -68,6 +69,9 @@ class Pipeline:
             model = RandomForest()
         elif self.model_name == "MultiLayerPerceptron":
             model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+        elif self.model_name == "MultiLayerRegression":
+            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+
         model.fit(*self._load_training_data())
         self.model_manager.save_model(model)
         if self.train_plots:

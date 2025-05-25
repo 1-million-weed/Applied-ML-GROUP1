@@ -2,7 +2,7 @@
 # Model Configuration
 # ===============================
 model:
-  name: "MultiLayerPerceptron"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
+  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
 
 # ===============================
 # Dataset Configuration
@@ -25,10 +25,10 @@ training:
   tensorboard: true   #todo
 
 # ===============================
-# Eval Configuration
+# Evaluation Configuration
 # ===============================
 
-testing:
+evaluation:
   enabled: false
   show_plot: true 
 
