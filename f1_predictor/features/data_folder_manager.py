@@ -1,6 +1,6 @@
 import os
 
-class DataFolderManager():
+class DataFolderManager:
     "This is a class to manage the data folder for the F1 Predictor project."
     "It checks if the folder exists, creates it if it doesn't, and manages its contents."
     "It also checks if the folder is empty and can empty the folder if needed."

@@ -8,4 +8,5 @@ tensorflow==2.19.0
 pyyaml==6.0.2
 fastapi==0.115.12
 streamlit==1.45.1
+pytest==8.3.5
 seaborn==0.13.2

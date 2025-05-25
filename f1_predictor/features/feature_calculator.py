@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 class CalculateSamplesRace:
     def __init__(self, race_id: str,
@@ -15,7 +14,8 @@ class CalculateSamplesRace:
         self.constructor_standings = constructor_standings
         self.qualifying = qualifying.copy()
 
-    def _convert_time_to_milliseconds(self, time_str: str) -> int:
+    @staticmethod
+    def _convert_time_to_milliseconds(time_str: str) -> int:
         """Convert a time like '1:27.236' to milliseconds."""
         if pd.isna(time_str) or time_str == '' or time_str == '\\N':
             return 4 * 60 * 1000   # Set to a very high value if the time is invalid
@@ -25,17 +25,16 @@ class CalculateSamplesRace:
                 milliseconds = int(minutes) * 60 * 1000 + float(seconds) * 1000
             else:
                 milliseconds = float(time_str) * 1000
-            return milliseconds
+            return int(milliseconds) # Ensure it's an integer
         except ValueError:
             return 4 * 60 * 1000  # Handle unexpected invalid formats
         
     def _get_amount_of_wins(self, driver_id: str) -> int:
         """Get the number of wins for a driver."""
         return self.driver_standings[self.driver_standings['driverId'] == driver_id]['wins'].values[0]
-        
-        
 
-    def _min_max_normalize(self, series: pd.Series) -> pd.Series:
+    @staticmethod
+    def _min_max_normalize(series: pd.Series) -> pd.Series:
         """Apply min-max normalization to a pandas Series."""
         min_val = series.min()
         max_val = series.max()
