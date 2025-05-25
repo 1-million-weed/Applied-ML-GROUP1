@@ -127,7 +127,7 @@ def test_get_amount_of_wins_nonexistent_driver(full_calculator):
     ([-10, -6, -2, 2, 6, 10], [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]), # Negative values
 ])
 def test_min_max_normalize_normal_case(full_calculator, series, expected):
-    """Test _min_max_normalize with normal data."""
+    """Test _min_max_normalize with dummy data."""
     # TODO: Add a test for normal data
     series = pd.Series(series)
     expected = pd.Series(expected)
