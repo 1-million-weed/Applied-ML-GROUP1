@@ -2,12 +2,34 @@ import pandas as pd
 import numpy as np
 
 class CalculateSamplesRace:
+    """
+    A class to process and calculate per-lap race samples from F1 datasets.
+
+    This includes normalization of lap times, qualifying data, and driver standings,
+    along with generating samples for training.
+    """
     def __init__(self, race_id: str,
                  laptimes: pd.DataFrame,
                  results: pd.DataFrame,
                  driver_standings: pd.DataFrame,
                  qualifying: pd.DataFrame,
-                 constructor_standings: pd.DataFrame):
+                 constructor_standings: pd.DataFrame) -> None:
+        """
+        Constructor method to initialize the CalculateSamplesRace object.
+
+        :param race_id: Unique identifier of the race.
+        :type race_id: str
+        :param laptimes: DataFrame containing lap-by-lap time data.
+        :type laptimes: pd.DataFrame
+        :param results: DataFrame with race results. 
+        :type results: pd.DataFrame
+        :param driver_standings: DataFrame with driver standings.
+        :type driver_standings: pd.DataFrame
+        :param qualifying: DataFrame with qualifying session data.
+        :type qualifying: pd.DataFrame
+        :param constructor_standings: DataFrame with constructor team standings.
+        :type constructor_standings: pd.DataFrame
+        """    
         self.race_id = race_id
         self.laptimes = laptimes
         self.results = results
@@ -16,7 +38,14 @@ class CalculateSamplesRace:
         self.qualifying = qualifying.copy()
 
     def _convert_time_to_milliseconds(self, time_str: str) -> int:
-        """Convert a time like '1:27.236' to milliseconds."""
+        """
+        Convert a time like '1:27.236' to milliseconds.
+
+        :param time_str: String representing a lap or qualifying time.
+        :type time_str: str
+        :return: Time in milliseconds.
+        :rtype: int
+        """
         if pd.isna(time_str) or time_str == '' or time_str == '\\N':
             return 4 * 60 * 1000   # Set to a very high value if the time is invalid
         try:
@@ -30,21 +59,36 @@ class CalculateSamplesRace:
             return 4 * 60 * 1000  # Handle unexpected invalid formats
         
     def _get_amount_of_wins(self, driver_id: str) -> int:
-        """Get the number of wins for a driver."""
-        return self.driver_standings[self.driver_standings['driverId'] == driver_id]['wins'].values[0]
-        
-        
+        """
+        Get the number of wins for a given driver.
+
+        :param driver_id: Unique driver ID.
+        :type driver_id: str
+        :return: Number of wins.
+        :rtype: int
+        """
+        return self.driver_standings[self.driver_standings['driverId'] == driver_id]['wins'].values[0]     
 
     def _min_max_normalize(self, series: pd.Series) -> pd.Series:
-        """Apply min-max normalization to a pandas Series."""
+        """
+        Apply min-max normalization to a pandas Series.
+
+        :param series: The pandas Series to normalize.
+        :type series: pd.Series
+        :return: Normalized Series scaled between 0 and 1.
+        :rtype: pd.Series
+        """
         min_val = series.min()
         max_val = series.max()
         if max_val - min_val == 0:
             return series
         return (series - min_val) / (max_val - min_val)
 
-    def _process_qualifying(self):
-        """Process qualifying data, handling time conversions and normalization properly."""
+    def _process_qualifying(self) -> None:
+        """
+        Process qualifying data by converting time strings to milliseconds,
+        determining the fastest lap, and normalizing both time and position data.
+        """
         # Convert each qualifying time column separately
         for col in ['q1', 'q2', 'q3']:
             self.qualifying[f'{col}_ms'] = self.qualifying[col].apply(
@@ -71,8 +115,11 @@ class CalculateSamplesRace:
         else:
             self.qualifying['position'] = 0
 
-    def _normalize_driver_standings(self):
-        """Normalize driver standings data."""
+    def _normalize_driver_standings(self) -> None:
+        """
+        Normalize driver standings and constructor standings using min-max scaling
+        for points, ELO ratings, and win counts.
+        """
         max_points_session = self.driver_standings['points'].max()
         if max_points_session == 0:
             max_points_session = 1
@@ -90,11 +137,31 @@ class CalculateSamplesRace:
         self.driver_standings['wins'] = self._min_max_normalize(self.driver_standings['wins'])
 
     def _get_finishing_positions(self):
-        """Retrieve finishing positions from results."""
+        """
+        Retrieve finishing positions for each driver.
+
+        :return: A dictionary mapping driverId to finishing position.
+        :rtype: dict[str, int]
+        """
         return self.results[['driverId', 'position']].set_index('driverId').to_dict()['position']
 
-    def _process_lap_data(self, lap, current_shortest, amount_of_laps, finishing_positions, driver_history):
-        """Process data for a single lap."""
+    def _process_lap_data(self, lap, current_shortest, amount_of_laps, finishing_positions, driver_history) -> tuple[pd.DataFrame, float]:
+        """
+        Process data for a single lap by normalizing lap times and computing lap progress.
+
+        :param lap: Current lap number.
+        :type lap: int
+        :param current_shortest: Current shortest lap time encountered so far.
+        :type current_shortest: float
+        :param amount_of_laps: Total number of laps in the race.
+        :type amount_of_laps: int
+        :param finishing_positions: Dictionary mapping driverId to final positions.
+        :type finishing_positions: dict[str, int]
+        :param driver_history: Historical normalized lap times per driver.
+        :type driver_history: dict[str, list[float]]
+        :return: Tuple of processed lap DataFrame and updated shortest time.
+        :rtype: tuple[pd.DataFrame, float]
+        """
         driver_laptimes = self.laptimes[self.laptimes['lap'] == lap].copy()
         driver_laptimes = driver_laptimes.merge(self.results[['driverId', 'position']], on='driverId', how='left')
 
@@ -112,7 +179,14 @@ class CalculateSamplesRace:
         return driver_laptimes, current_shortest
 
     def _get_team_points(self, driver_id: str) -> int:
-        """Get the points for the team of a given driver."""
+        """
+        Get the points for the team of a given driver.
+
+        :param driver_id: identifier for the driver
+        :type driver_id: str
+        :return: Points scored by the  driver's team, or 0 if not found.
+        :rtype: int
+        """
         driver_standings_row = self.driver_standings[self.driver_standings['driverId'] == driver_id]
         if not driver_standings_row.empty:
             team_name_driver = driver_standings_row['constructor_name'].values[0]
@@ -127,8 +201,24 @@ class CalculateSamplesRace:
             return 0
         return points_team.values[0]
 
-    def _create_sample(self, row, lap, driver_history, finishing_positions, total_drivers):
-        """Create a sample for a single driver."""
+    def _create_sample(self, row, lap, driver_history, finishing_positions, total_drivers) -> dict[str, float] [None]:
+        """
+        Create a single training sample for a driver based on their lap performance, 
+        historical performance, and various race features.
+
+        :param row: A row from the lap time dataframe containing driver performance metrics.
+        :type row: pd.Series
+        :param lap: The current lap number.
+        :type lap: int
+        :param driver_history: Dictionary storing each driver's history of normalized lap times.
+        :type driver_history: dict[str, list[float]]
+        :param finishing_positions: Mapping from driver ID to their final race position.
+        :type finishing_positions: dict[str, int]
+        :param total_drivers: The total number of drivers in the current lap.
+        :type total_drivers: int
+        :return: A dictionary representing a training sample with engineered features for a single driver, or None if the position is invalid.
+        :rtype: dict[str, float] | None
+        """
         driver_id = row.driverId
         norm_lap = row.milliseconds
 
@@ -182,8 +272,13 @@ class CalculateSamplesRace:
             'points_team': points_team,
         }
 
-    def calculate_samples(self) -> list:
-        """Calculate samples for race prediction."""
+    def calculate_samples(self) -> list[dict[str, float]]:
+        """
+        Calculate a list of normalized samples for a given race.
+
+        :return: A list of dictionaries representing samples with race features.
+        :rtype: list[dict[str, float]]
+        """
         self._process_qualifying()
         self._normalize_driver_standings()
         samples = []

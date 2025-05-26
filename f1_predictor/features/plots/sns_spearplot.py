@@ -1,3 +1,10 @@
+"""
+Visualizes relationships between features in the F1 training dataset using Seaborn pairplot.
+
+This script loads training data, samples a subset of it, and creates a pairplot
+colored by finishing position to explore patterns across features.
+"""
+
 import os
 import pandas as pd
 import matplotlib.pyplot as plt 

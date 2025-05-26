@@ -2,15 +2,29 @@ import os
 import pickle
 
 class Modelmanager:
-    def __init__(self, model_name: str):
+    """
+    Handles saving, loading, deleting, 
+    and checking if the models exist.
+
+    This class manages storing models and ensuring 
+    controlled overwriting and deletion behavior.
+    """
+    def __init__(self, model_name: str) -> None:
+        """
+        Constructor method to initialize the model manager with a specific model file name.
+
+        :param model_name: Name of the model to manage.
+        :type model_name: str
+        """    
         self.model_name = model_name
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.parent_dir = os.path.dirname(self.current_dir)
         self.model_dir = os.path.join(os.path.dirname(self.parent_dir), "models")
 
-    def save_model(self, model):
+    def save_model(self, model) -> None:
         """
-        Save the model to a file.
+        Save the model to a file. Overwrites if model file already exists.
+        
         :param model: The model to save.
         """
         #make sure the model doesnt already exist
@@ -19,10 +33,13 @@ class Modelmanager:
         with open(os.path.join(self.model_dir, self.model_name), 'wb') as f:
             pickle.dump(model, f)
 
-    def load_model(self):
+    def load_model(self) -> object:
         """
-        Load the model from a file.
-        :return: The loaded model.
+        Loads the model from a file.
+
+        :raises FileNotFoundError: If model file does not exist.
+        :return: Loaded model object.
+        :rtype: object
         """
         #make sure the model exists
         if not self.check_if_model_exists():
@@ -31,16 +48,17 @@ class Modelmanager:
             model = pickle.load(f)
         return model
         
-    def delete_model(self):
+    def delete_model(self) -> None:
         """
         Delete the model file.
         """
         os.remove(os.path.join(self.model_dir, self.model_name))
 
-    def check_if_model_exists(self):
+    def check_if_model_exists(self) -> bool:
         """
         Check if the model file exists.
         :return: True if the model file exists, False otherwise.
+        :rtype: bool
         """
         #question what about the file extension?
         #explanation: the model name is the file name, so we need to check if the file exists

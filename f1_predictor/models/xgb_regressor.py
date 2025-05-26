@@ -14,8 +14,10 @@ sys.path.insert(0, parent_dir)
 
 
 class XGBRegressor(Model):
-    """ XGBoost for regression wrapper """
-
+    """
+    XGBoost wrapper for regression with parameter 
+    validation, evaluatiopn, and feature importance plotting.
+    """
     def __init__(self,
                  max_depth: int = 6,
                  learning_rate: float = 0.1,
@@ -23,14 +25,15 @@ class XGBRegressor(Model):
                  gamma: float = 0.01,
                  ) -> None:
         """
-        Initialize the XGBoost model with various hyperparameters,
-        as defined in the scikit-learn library.
-        :param max_depth: Maximum depth
-        :param learning_rate: Learning rate
-        :param n_estimators: Number of estimators
-        :param gamma: Minimum loss reduction
-        We did not like how XGboost handles error messages, so we
-        decided to reimplement checking for parameter values.
+        Constructor method to initialize the XGBoost regressor model 
+        with configurable hyperparameters, defined in the scikit-learn library.
+        (   We did not like how XGboost handles error messages, so we
+        decided to reimplement checking for parameter values.)
+
+        :param max_depth: Maximum tree depth for baase learners.
+        :param learning_rate: boosting learning rate.
+        :param n_estimators: number of estimators/boosting rounds.
+        :param gamma: minimum loss reduction requied for partition.
         """
         max_depth, learning_rate, n_estimators, gamma = \
             self._validate_parameters(max_depth, learning_rate, n_estimators,
@@ -48,9 +51,15 @@ class XGBRegressor(Model):
                              gamma: float
                              ) -> Tuple[int, float, int, float]:
         """
-        Validates the parameters for the model.
-        Replaces every wrong parameter with its default
-        value while informing the user of the change.
+        Validates hyperparameters and apply default values if valid for the model.
+        Replaces every wrong parameter with its default value, 
+        while informing the user of the change.
+
+        :param max_depth: Intended tree depth.
+        :param learning_rate: Step size shrinkage.
+        :param n_estimators: Number of trees.
+        :param gamma: Minimum loss reduction threshold.
+        :return: Tuple of validated parameters.
         """
         if not isinstance(max_depth, int):
             print("Max depth must be an integer. Setting to default value 6")
@@ -89,7 +98,10 @@ class XGBRegressor(Model):
     def fit(self, observations: np.ndarray, ground_truth: np.ndarray) -> None:
         """
         Train the model based on the observations and labels (ground_truth)
-        by applying the xgboost method .fit
+        by applying the xgboost method to fit the model on training data.
+
+        :param observations: Feature matrix.
+        :param ground_truth: Regression target values.
         """
         self._model.fit(observations, ground_truth)
         self._parameters = {
@@ -98,14 +110,19 @@ class XGBRegressor(Model):
 
     def predict(self, observations: np.ndarray) -> np.ndarray:
         """
-        Make predictions based on the observations
-        by applying the xgboost method .predict
+        Make predictions for the target value based on the observations
+        by applying the xgboost method .predict on the input data.
+
+        :param observations: Feature matrix for prediction.
+        :return: Predicted target values
+        :return_type: np.ndarray
         """
         return self._model.predict(observations)
     
     def plot_feature_importance(self, feature_names: list, max_num_features: int = 10) -> None:
         """
         Plots the top N feature importances.
+        
         :param feature_names: List of feature names.
         :param max_num_features: Maximum number of features to plot.
         """
@@ -116,11 +133,14 @@ class XGBRegressor(Model):
         plt.ylabel("Features")
         plt.show()
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
         """
-        Evaluate the model on the test data.
-        :param x_test: Test input features as a numpy array.
-        :param y_test: Test target values as a numpy array.
+        Evaluate the model on the test data and print the mse.
+
+        :param x_test: Test input features.
+        :type x_test: np.array
+        :param y_test: Test target values.
+        :type y_test: np.array
         """
         y_pred = self.predict(x_test)
         mse = np.mean((y_test - y_pred) ** 2)
