@@ -148,9 +148,29 @@ class XGBRegressor(Model):
         print(y_pred[:5])
         print("Sample ground truth:")
         print(y_test[:5])
-
+        y_pred = np.round(y_pred).astype(int)
+        self.plot_confusion_matrix(y_test, y_pred)
 
         print(f"Mean Squared Error: {mse}")
         return {
             "mse": mse,
         }
+    
+    def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray) -> None:
+        """
+        Plot the confusion matrix for the model predictions.
+        
+        Args:
+            y_true: True labels as a numpy array.
+            y_pred: Predicted labels as a numpy array.
+        """
+        from sklearn.metrics import confusion_matrix
+        import seaborn as sns
+        
+        cm = confusion_matrix(y_true, y_pred)
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.show()

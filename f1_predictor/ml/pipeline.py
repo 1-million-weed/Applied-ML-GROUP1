@@ -5,8 +5,10 @@ from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
+from ..models.multi_layer_regression import MultiLayerRegression
 from .api import API
 from ..app.homepage import HomePage
+from ..features.elo_calculator import F1EloAnalyzer
 
 
 class Pipeline:
@@ -19,7 +21,7 @@ class Pipeline:
         model_config,
         dataset_config,
         training_config,
-        test_config,
+        eval_config,
         inference_config,
     ) -> None:
         """
@@ -39,7 +41,7 @@ class Pipeline:
         self.model_config = model_config
         self.dataset_config = dataset_config
         self.training_config = training_config
-        self.test_config = test_config
+        self.eval_config = eval_config
         self.inference_config = inference_config
 
         self.dataset_manager = DatasetManager()
@@ -47,38 +49,28 @@ class Pipeline:
         self.model_manager = self._get_model_manager(self.model_name)
 
         self.train_plots = training_config['show_plot']
-        self.test_plots = test_config['show_plot']
+        self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
+        self.calculte_elo = dataset_config['calculate_elo']
         self.train_model = self.training_config['enabled']
-        self.test_model = test_config['enabled']
+        self.test_model = eval_config['enabled']
         self.run_model = inference_config['enabled']
 
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
 
-    def _get_model_manager(self, model_name) -> Modelmanager:
-        """model manager instance if the model available.
-
-        :param model_name: The name of the model.
-        :type model_name: str
-        :raises ValueError: If the model available.
-        :return: Modelmanager instance for the given model.
-        :rtype: Modelmanager
-        """    
-        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron"]
+    def _get_model_manager(self, model_name):
+        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
         if model_name not in available_models:
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
         else:
             return Modelmanager(model_name)
 
 
-    def run(self) -> None:
-        """
-        Run the full pipeline based on configuration.
-
-        Executes steps for feature generation, training, testing, and inference.
-        """    
+    def run(self):
+        if self.calculte_elo:
+            self.elo_calculator()
         if self.gen_features:
             self.make_features()
         
@@ -104,6 +96,9 @@ class Pipeline:
             model = RandomForest()
         elif self.model_name == "MultiLayerPerceptron":
             model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+        elif self.model_name == "MultiLayerRegression":
+            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+
         model.fit(*self._load_training_data())
         self.model_manager.save_model(model)
         if self.train_plots:
@@ -168,4 +163,24 @@ class Pipeline:
             app = HomePage()
             app.display()
 
+    def elo_calculator(self):
+        analyzer = F1EloAnalyzer()
+    
+        # Run complete analysis
+        results = analyzer.run_complete_analysis()
+        
+        # Display top drivers
+        print("Top 30 Drivers by ELO:")
+        print(results['top_drivers'])
+        
+        # Create visualizations
+        analyzer.plot_driver_race_ratio()
+        analyzer.plot_yearly_elo_distribution()
+        analyzer.plot_driver_vs_teammates('max_verstappen')
+        
+        # Access specific results
+        elo_history = results['elo_history']
+        print(f"\nTotal races processed: {elo_history['raceId'].nunique()}")
+        print(f"Total drivers: {elo_history['driverRef'].nunique()}")
+        analyzer.save_results()
         

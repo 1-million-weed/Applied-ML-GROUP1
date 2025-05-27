@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 class CalculateSamplesRace:
     """
@@ -54,7 +53,7 @@ class CalculateSamplesRace:
                 milliseconds = int(minutes) * 60 * 1000 + float(seconds) * 1000
             else:
                 milliseconds = float(time_str) * 1000
-            return milliseconds
+            return int(milliseconds) # Ensure it's an integer
         except ValueError:
             return 4 * 60 * 1000  # Handle unexpected invalid formats
         
