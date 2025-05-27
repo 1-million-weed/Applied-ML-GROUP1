@@ -9,6 +9,7 @@ from ..models.multi_layer_regression import MultiLayerRegression
 from .api import API
 from ..app.homepage import HomePage
 from ..features.elo_calculator import F1EloAnalyzer
+import pandas as pd
 
 
 class Pipeline:

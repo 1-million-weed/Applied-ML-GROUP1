@@ -3,6 +3,7 @@ from xgboost import XGBRegressor as WrappedXGBRegressor
 from typing import Tuple
 import matplotlib.pyplot as plt
 from xgboost import plot_importance
+from typing import Dict
 
 import numpy as np
 import os

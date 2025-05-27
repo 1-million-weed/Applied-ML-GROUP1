@@ -2,13 +2,13 @@
 # Model Configuration
 # ===============================
 model:
-  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+  name: "XGBClassifier"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
 
 # ===============================
 # Dataset Configuration
 # ===============================
 dataset: 
-  calculate_elo: true
+  calculate_elo: false
   generate: false
   test_size: 0.2
   random_state: 42
@@ -37,6 +37,6 @@ evaluation:
 # Inference Configuration
 # ===============================
 inference:
-  enabled: false
+  enabled: true
   api: true
   streamlit: true

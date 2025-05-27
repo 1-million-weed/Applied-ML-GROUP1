@@ -51,7 +51,7 @@ class OrdinalCrossentropy:
 
 
     @classmethod
-    def from_config(cls, config) -> self:
+    def from_config(cls, config):
         """        
         Instantiate the class from a config dictionary.
 
@@ -72,7 +72,7 @@ class OrdinalCrossentropy:
         return {"num_classes": self.num_classes}
 
     @classmethod
-    def from_config(cls, config) -> self:
+    def from_config(cls, config):
         """
         Instantiates the class from its configuration dictionary.
 

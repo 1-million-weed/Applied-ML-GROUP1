@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Union
 
 class CalculateSamplesRace:
     """
@@ -200,7 +201,7 @@ class CalculateSamplesRace:
             return 0
         return points_team.values[0]
 
-    def _create_sample(self, row, lap, driver_history, finishing_positions, total_drivers) -> dict[str, float] [None]:
+    def _create_sample(self, row, lap, driver_history, finishing_positions, total_drivers) -> Union[dict[str, float], None]:
         """
         Create a single training sample for a driver based on their lap performance, 
         historical performance, and various race features.
