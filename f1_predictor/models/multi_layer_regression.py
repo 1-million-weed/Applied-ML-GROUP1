@@ -150,11 +150,19 @@ class MultiLayerRegression(Model):
         os.system(f"tensorboard --logdir {self.log_dir}")
         
     def trainByYear(self, training_data: tuple, training_config: dict) -> None:
+        """
+        Train the model on yearly data, saving weights after each year.
+        args:
+            training_data: Tuple containing the training data and ground truth.
+            training_config: Configuration dictionary for training parameters.
+        returns: None
+        """
         ground_truth = training_data[-1]
         training_data = training_data[0]
         years = training_data['year'].unique()
         max_year = max(years)
         min_year = min(years)
+        # start training from the first year
         for year in range(min_year, max_year + 1):
             
             if year > min_year and os.path.exists(f"model_weights_{year-1}.weights.h5"):
@@ -169,7 +177,7 @@ class MultiLayerRegression(Model):
             if training_data_year.empty or ground_truth_year.empty:
                 print(f"No data available for year {year}, skipping...")
                 continue
-            self.fit(training_data_year, ground_truth_year)
+            self.fit(training_data_year, ground_truth_year, epochs=100)
             print("finished learning for year", year)
             
             # Save the model weights
