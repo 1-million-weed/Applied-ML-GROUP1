@@ -2,7 +2,7 @@
 # Model Configuration
 # ===============================
 model:
-  name: "XGBClassifier"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
 
 # ===============================
 # Dataset Configuration

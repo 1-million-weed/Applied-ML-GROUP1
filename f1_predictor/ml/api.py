@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from .dataset_manager import DatasetManager
+import pandas as pd
 
 class API:
     """Class for the API interface.
@@ -23,10 +24,26 @@ class API:
             version="1.0.0",
         )
 
-        @self.app.get("/predict")
+        @self.app.post("/predict")
         async def predict(data: dict):
-            data = data.get("input_data")
-            if not self.dataset_manager.validate_data(data):
+            #alright so we are getting a dict with the name of each feature and its value
+            """Endpoint for making predictions.
+            :param data: Input data for prediction.
+            :type data: dict
+            :raises HTTPException: If the input data format is invalid.
+            :return: Dictionary with prediction results.
+            :rtype: dict
+            """
+            
+            # Convert input data to a DataFrame
+            try:
+                input_df = pd.DataFrame.from_dict([data], orient='columns')
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Error converting input to DataFrame: {str(e)}")
+            if not self.dataset_manager.validate_data(input_df):
                 raise HTTPException(status_code=400, detail="Invalid data format")
-            prediction = self.model.predict(data)
+            prediction = self.model.predict(input_df)
+            print(prediction)
+            if hasattr(prediction, "tolist"):
+                prediction = prediction.tolist()
             return {"prediction": prediction}
