@@ -59,12 +59,16 @@ class Model(ABC):
 
     @property
     def parameters(self) -> dict:
-        """ Returns a copy of parameters to prevent leakage. """
+        """
+        Returns a copy of parameters to prevent leakage.
+        """
         return deepcopy(self._parameters)
 
     @property
     def type(self) -> str:
-        """ Returns the model type. """
+        """
+        Returns the model type.
+        """
         return self._type
 
     @property

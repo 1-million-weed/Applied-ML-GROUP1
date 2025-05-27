@@ -8,16 +8,37 @@ from sklearn.model_selection import train_test_split
 
 
 class FeatureGenerator:
+    """
+    Generates training and testing features for Formula 1 race prediction.
+
+    This class handles feature creation from the data set for each race,
+    and splits data into train/test sets before saving.
+    """
     def __init__(self,
                 random_seed: int,
                 test_size: float = 0.2,
-                empty_folder: bool = True):
+                empty_folder: bool = True) -> None:
         
         self.test_size = test_size
         self.random_seed = random_seed
         self.empty_folder = empty_folder
+        """
+        Initialize the feature generator.
 
-    def run(self):
+        :param random_seed: Random seed for reproducibility of train-test split.
+        :type random_seed: int
+        :param test_size: Fraction of races to be used as test data. Defaults to 0.2.
+        :type test_size: float, optional
+        :param empty_folder: Whether to clear the data folder before saving new features.
+        :type empty_folder: bool, optional
+        """
+    def run(self) -> None:
+        """
+        Run the feature generation process.
+
+        Loads datasets, calculates features for each race,
+        splits data into training and testing sets, and saves them for each race.
+        """    
         #make sure data_folder is empty
         data_folder_manager = DataFolderManager(empty_folder=self.empty_folder)
         

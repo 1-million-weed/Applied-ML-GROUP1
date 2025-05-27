@@ -11,22 +11,25 @@ class RandomForest(Model):
     RandomForest model for regression tasks with additional features
     like plotting graphs for feature importance and actual vs. predicted values.
 
-    Attributes:
-        n_trees (int): Number of trees in the forest.
-        max_depth (int): Maximum depth of the tree.
-        min_samples_split (int): Minimum number of samples required to split an internal node.
-        _parameters (dict): Hyperparameters for the RandomForestRegressor.
-        _model (RandomForestRegressor): The RandomForestRegressor instance.
+    :param n_trees: Number of trees in the forest.
+    :type n_trees: int
+    :param max_depth: Maximum depth of the tree.
+    :type max_depth: Optional[int]
+    :param min_samples_split: Minimum number of samples required to split an internal node.
+    :type min_samples_split: int
+    :param max_leaf_nodes: Maximum number of leaf nodes in the tree.
+    :type max_leaf_nodes: int
     """
-
-    def __init__(self, n_trees: int = 10, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 50) -> None:
+    def __init__(self, n_trees: int = 50, max_depth: int = None, min_samples_split: int = 2, max_leaf_nodes: int = 500) -> None:
         """
-        Initializes the RandomForest model with given hyperparameters.
+        Constructor method to initializes the RandomForest model with given hyperparameters.
 
-        Args:
-            n_trees (int): Number of trees in the forest.
-            max_depth (int): Maximum depth of the tree.
-            min_samples_split (int): Minimum number of samples required to split an internal node.
+       :param n_trees: Number of trees in the forest.
+        :type n_trees: int
+        :param max_depth: Maximum depth of the tree.
+        :type max_depth: Optional[int]
+        :param min_samples_split: Minimum number of samples required to split an internal node.
+        :type min_samples_split: int
         """
         super().__init__(type="classification")
         self.n_trees = n_trees
@@ -43,37 +46,40 @@ class RandomForest(Model):
 
     def fit(self, observations: np.ndarray, ground_truth: np.ndarray) -> None:
         """
-        Fits the RandomForest model to the provided data.
+        Train the RandomForest model to fit the RandomForest model to the provided data.
 
-        Args:
-            observations (np.ndarray): Training data.
-            ground_truth (np.ndarray): Target values.
+
+        :param observations: Feature matrix for training data.
+        :type observations: np.ndarray
+        :param ground_truth: Ground truth labels for target values.
+        :type ground_truth: np.ndarray
         """
         self._model.fit(observations, ground_truth)
         self._parameters.update(self._model.get_params())
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
-        Predicts the target values for the provided data.
+        Predicts the target values for input features.
 
-        Args:
-            X (np.ndarray): Input data.
 
-        Returns:
-            np.ndarray: Predicted target values.
+        :param x: Feature matrix of input data for prediction.
+        :type x: np.ndarray
+        :return: Predicted class labels of target values.
+        :rtype: np.ndarray
         """
         return self._model.predict(x)
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, object]:
         """
-        Evaluates the classification model on the test data.
+        Evaluates the classification model 
+        using test data, displaying metrics and a confusion matrix.
 
-        Args:
-            x_test (np.ndarray): Test input features.
-            y_test (np.ndarray): Test target values.
-
-        Returns:
-            dict: Evaluation metrics including accuracy, precision, recall, and F1-score.
+        :param x_test: Test input features.
+        :type x_test: np.ndarray
+        :param y_test: Test target values..
+        :type y_test: np.ndarray
+        :param return: A dictionary conataining Evaluation metrics including accuracy, precision, recall, and F1-score.
+        :type return: dict
         """
         y_test_pred = self.predict(x_test)
         
@@ -99,16 +105,20 @@ class RandomForest(Model):
             "confusion_matrix": conf_matrix
         }
 
-    def _plot_confusion_matrix(self, cm, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
+    def _plot_confusion_matrix(self, cm, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues) -> None:
         """
         Plots the confusion matrix.
         
-        Args:
-            cm (np.ndarray): Confusion matrix
-            classes (list): List of class labels
-            normalize (bool): Whether to normalize the confusion matrix
-            title (str): Title for the plot
-            cmap: Colormap for the plot
+        :param cm: Confusion matrix.
+        :type cm: np.ndarray
+        :param classes: List or array of class names.
+        :type classes: np.ndarray
+        :param normalize: Whether to normalize the confusion matrix.
+        :type normalize: bool
+        :param title: Title of the plot.
+        :type title: str
+        :param cmap: Color map used in the plot.
+        :type cmap: matplotlib colormap
         """
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -138,11 +148,11 @@ class RandomForest(Model):
 
 
     def plot_feature_importance(self, feature_names: list) -> None:
-        """
-        Plots the top 10 feature importances.
+        """        
+        Plot the top 10 feature importances from the trained model.
 
-        Args:
-            feature_names (list): List of feature names.
+        :param feature_names: List of feature names corresponding to input features.
+        :type feature_names: List[str]
         """
         feature_importance = pd.DataFrame({
             'Feature': feature_names,
@@ -162,11 +172,12 @@ class RandomForest(Model):
 
     def plot_actual_vs_predicted(self, y_test: np.ndarray, y_test_pred: np.ndarray) -> None:
         """
-        Plots actual vs predicted values.
+        Plot actual vs. predicted values to visualize prediction quality.
 
-        Args:
-            y_test (np.ndarray): Actual target values.
-            y_test_pred (np.ndarray): Predicted target values.
+        :param y_test: Ground truth target values.
+        :type y_test: np.ndarray
+        :param y_test_pred: Predicted target values.
+        :type y_test_pred: np.ndarray
         """
         plt.figure(figsize=(10, 6))
         plt.scatter(y_test, y_test_pred, alpha=0.5)

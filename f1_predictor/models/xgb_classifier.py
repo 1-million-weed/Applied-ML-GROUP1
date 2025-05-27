@@ -17,8 +17,19 @@ sys.path.insert(0, parent_dir)
 
 
 class XGBClassifier(Model):
-    """ XGBoost for classification wrapper """
-
+    """
+    A wrapper for XGBoost's XGBClassifier for classification tasks,
+    with parameter validation, feature importance plotting, and evaluation methods.
+    
+    :param max_depth: Maximum depth of a tree.
+    :type max_depth: int
+    :param learning_rate: Learning rate (shrinkage).
+    :type learning_rate: float
+    :param n_estimators: Number of estimnators (trees).
+    :type n_estimators: int
+    :param gamma: Minimum loss reduction required to make a further partition on a leaf node.
+    :type gamma: float
+    """
     def __init__(self,
                  max_depth: int = 10,
                  learning_rate: float = 0.1,
@@ -26,14 +37,18 @@ class XGBClassifier(Model):
                  gamma: float = 5.0,
                  ) -> None:
         """
-        Initialize the XGBoost model with various hyperparameters,
-        as defined in the scikit-learn library.
-        :param max_depth: Maximum depth
-        :param learning_rate: Learning rate
-        :param n_estimators: Number of estimators
-        :param gamma: Minimum loss reduction
-        We did not like how XGBoost handles error messages, so we
+        Constructor method to initialize the XGBoost model with various hyperparameters,
+        as defined in the scikit-learn library. We did not like how XGBoost handles error messages, so we
         decided to reimplement checking for parameter values.
+
+        :param max_depth: Maximum depth of a tree.
+        :type max_depth: int
+        :param learning_rate: Learning rate (shrinkage).
+        :type learning_rate: float
+        :param n_estimators: Number of estimnators (trees).
+        :type n_estimators: int
+        :param gamma: Minimum loss reduction required to make a further partition on a leaf node.
+        :type gamma: float
         """
         max_depth, learning_rate, n_estimators, gamma = \
             self._validate_parameters(max_depth, learning_rate, n_estimators,
@@ -54,6 +69,9 @@ class XGBClassifier(Model):
         Validates the parameters for the model.
         Replaces every wrong parameter with its default
         value while informing the user of the change.
+
+        :return: Tuple of sanitized parameters.
+        :rtype: Tuple[int, float, int, float]
         """
         if not isinstance(max_depth, int):
             print("Max depth must be an integer. Setting to default value 6")
@@ -92,9 +110,13 @@ class XGBClassifier(Model):
     def fit(self, observations: np.ndarray, ground_truth: np.ndarray) -> None:
         """
         Train the model based on the observations and labels (ground_truth)
-        by applying the xgboost method .fit
-        """
+        by applying the xgboost method to fit the data set.add
 
+        :param observations: Feature matrix for training.
+        :type observations: np.ndarray
+        :param ground_truth: Target class labels.
+        :type ground_truth: np.ndarray
+        """
         ground_truth = ground_truth - ground_truth.min()
         self._model.fit(observations, ground_truth)
         self._parameters = {
@@ -104,15 +126,22 @@ class XGBClassifier(Model):
     def predict(self, observations: np.ndarray) -> np.ndarray:
         """
         Make predictions based on the observations
-        by applying the xgboost method .predict
+        by applying the xgboost method .predict on the data.
+
+        :param observations: Input feature matrix.
+        :type observations: np.ndarray
+        :return: Predicted cl
         """
         return self._model.predict(observations)
     
     def plot_feature_importance(self, feature_names: list, max_num_features: int = 10) -> None:
         """
         Plots the top N feature importances.
-        :param feature_names: List of feature names.
+
+        :param feature_names: List of input feature names.
+        :type feature_names: List[str]
         :param max_num_features: Maximum number of features to plot.
+        :type max_num_features: int
         """
         plt.figure(figsize=(10, 6))
         plot_importance(self._model, max_num_features=max_num_features)
@@ -124,9 +153,13 @@ class XGBClassifier(Model):
     def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
         """
         Evaluate the model on the test data.
-        :param x_test: Test input features as a numpy array.
-        :param y_test: Test target values as a numpy array.
-        :return: A dictionary containing evaluation metrics.
+
+        :param x_test: Feature matrix for testing the input features.
+        :type x_test: np.ndarray
+        :param y_test: Test target values (Ground truth labels) on test data.
+        :type y_test: np.ndarray
+        :return: Dictionary with accuracy, precision, recall, and F1 score.
+        :rtype: Dict[str, float]
         """
         y_test = y_test - y_test.min()
         y_pred = self.predict(x_test)

@@ -4,7 +4,14 @@ import pandas as pd
 
 
 class Dataset:
+    """This is a class that handles loading the data and storing them into a dataset.
+    """    
     def __init__(self, name: str):
+        """_summary_
+
+        Args:
+            name (str): _description_
+        """    
         current_dir = os.path.dirname(__file__)
         data_path = os.path.join(current_dir, "data", name)
         self.path = data_path

@@ -11,10 +11,29 @@ import os
 
 @tf.keras.utils.register_keras_serializable()
 class OrdinalCrossentropy:
-    def __init__(self, num_classes):
+    """
+    Custom loss function for ordinal classification, penalizing predictions by their distance from the true class.
+    """
+    def __init__(self, num_classes) -> None:
+        """
+        Constructor method to initialize the loss function.
+
+        :param num_classes: Total number of classes in the classification problem.
+        :type num_classes: int
+        """    
         self.num_classes = num_classes
 
-    def __call__(self, y_true, y_pred):
+    def __call__(self, y_true, y_pred) -> tf.Tensor:
+        """
+        Compute the ordinal cross-entropy loss.
+
+        :param y_true: One-hot encoded true labels.
+        :type y_true: tf.Tensor
+        :param y_pred: Predicted probabilities.
+        :type y_pred: tf.Tensor
+        :return: Computed loss.
+        :rtype: tf.Tensor
+        """    
         y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0)
         true_labels = tf.argmax(y_true, axis=-1)
 
@@ -32,31 +51,55 @@ class OrdinalCrossentropy:
 
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config) -> self:
+        """        
+        Instantiate the class from a config dictionary.
+
+        :param config: Configuration dictionary.
+        :type config: dict
+        :return: Instantiated class object.
+        :rtype: cls
+        """ 
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> dict:
         """
         Returns the configuration of the loss function for serialization.
+
+        :return: Configuration dictionary.
+        :rtype: dict
         """
         return {"num_classes": self.num_classes}
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config) -> self:
         """
-        Instantiates the class from its configuration.
+        Instantiates the class from its configuration dictionary.
+
+        :param config: Configuration dictionary.
+        :type config: dict
+        :return: Instantiated class object.
+        :rtype: cls.
         """
         return cls(**config)
 
 class MultiLayerPerceptron(Model):
+    """
+    A multi-layer perceptron model for classification of Formula 1 finishing positions.
+
+    :param Model: _description_
+    :type Model: _type_
+    """
     def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20) -> None:
         """
-        Initialize the MultiLayerPerceptron model for classification.
+        Constructor method to initialize the MultiLayerPerceptron model for classification.
 
-        Args:
-            type: The type of the model.
-            input_shape: The number of input features.
-            num_classes: The number of output classes (20 positions).
+        :param type: Model type identifier.
+        :type type: str
+        :param input_shape: Number of input features.
+        :type input_shape: int
+        :param num_classes: Number of output classes (positions).
+        :type num_classes: int
         """
         super().__init__(type)
         self.num_classes = num_classes
@@ -78,12 +121,16 @@ class MultiLayerPerceptron(Model):
         """
         Train the model on the given observations and ground truth.
         
-        Args:
-            observations: Input features as a numpy array.
-            ground_truth: Target values (finishing positions) as a numpy array.
-            epochs: Number of epochs to train for.
-            batch_size: Batch size for training.
-            validation_split: Fraction of the data to use for validation.
+        :param observations: Input features.
+        :type observations: np.ndarray
+        :param ground_truth: Target values for class labels(finishing positions).
+        :type ground_truth: np.ndarray        
+        :param epochs: Number of training epochs.
+        :type epochs: int
+        :param batch_size: Training batch size.
+        :type batch_size: int
+        :param validation_split: Fraction of training data to use for validation.
+        :type validation_split: float
         """
         # Convert ground_truth to one-hot encoding
         # First, ensure ground_truth is 0-indexed for proper one-hot encoding
@@ -128,12 +175,12 @@ class MultiLayerPerceptron(Model):
         """
         Predict the most likely class (finishing position) for each observation.
         
-        Args:
-            observations: Input features as a numpy array.
-            return_zero_indexed: If True, returns positions 0-19, otherwise returns 1-20.
-            
-        Returns:
-            Predicted class labels (finishing positions) as a numpy array.
+        :param observations: Input data.
+        :type observations: np.ndarray
+        :param return_zero_indexed: If True, returns positions 0-19, otherwise returns 1-20.
+        :type return_zero_indexed: bool
+        :return: Predicted class labels (finishing positions).
+        :rtype: np.ndarray
         """
         probs = self._model.predict(observations)
         positions = np.argmax(probs, axis=1)
@@ -144,13 +191,16 @@ class MultiLayerPerceptron(Model):
             
         return positions
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
         """
         Evaluate the model on the test data.
 
-        Args:
-            x_test: Test input features as a numpy array.
-            y_test: Test target values as a numpy array (one-hot encoded).
+        :param x_test: Test features.
+        :type x_test: np.ndarray
+        :param y_test:  Test target values(one-hot encoded).
+        :type y_test: np.ndarray
+        :return: Evaluation metrics.
+        :rtype: dict
         """
         # Check if y_test is already one-hot encoded
         if len(y_test.shape) == 1 or y_test.shape[1] == 1:
@@ -175,7 +225,7 @@ class MultiLayerPerceptron(Model):
 
     def plot_loss(self) -> None:
         """
-        Plot the training and validation loss over epochs.
+        Plot the training and validation loss curve over epochs.
         """
         plt.figure(figsize=(8, 5))
         plt.plot(self._history.history['loss'], label='Training Loss')
@@ -190,9 +240,12 @@ class MultiLayerPerceptron(Model):
         """
         Plot the confusion matrix for the model predictions.
 
-        Args:
-            y_true: True labels (one-hot encoded or single-label).
-            y_pred: Predicted labels (single-label).
+
+
+        :param y_true: True labels (one-hot encoded or single-label).
+        :type y_true: np.ndarray
+        :param y_pred: Predicted labels (single-label).
+        :type y_pred: np.ndarray
         """
         from sklearn.metrics import confusion_matrix
         import seaborn as sns
