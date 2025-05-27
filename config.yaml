@@ -8,6 +8,7 @@ model:
 # Dataset Configuration
 # ===============================
 dataset: 
+  calculate_elo: true
   generate: false
   test_size: 0.2
   random_state: 42
@@ -36,6 +37,6 @@ evaluation:
 # Inference Configuration
 # ===============================
 inference:
-  enabled: true
+  enabled: false
   api: true
   streamlit: true

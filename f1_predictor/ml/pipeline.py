@@ -8,6 +8,7 @@ from ..models.multi_layer_perceptron import MultiLayerPerceptron
 from ..models.multi_layer_regression import MultiLayerRegression
 from .api import API
 from ..app.homepage import HomePage
+from ..features.elo_calculator import F1EloAnalyzer
 
 
 class Pipeline:
@@ -32,6 +33,7 @@ class Pipeline:
         self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
+        self.calculte_elo = dataset_config['calculate_elo']
         self.train_model = self.training_config['enabled']
         self.test_model = eval_config['enabled']
         self.run_model = inference_config['enabled']
@@ -48,6 +50,8 @@ class Pipeline:
 
 
     def run(self):
+        if self.calculte_elo:
+            self.elo_calculator()
         if self.gen_features:
             self.make_features()
         
@@ -115,4 +119,24 @@ class Pipeline:
             app = HomePage()
             app.display()
 
+    def elo_calculator(self):
+        analyzer = F1EloAnalyzer()
+    
+        # Run complete analysis
+        results = analyzer.run_complete_analysis()
+        
+        # Display top drivers
+        print("Top 30 Drivers by ELO:")
+        print(results['top_drivers'])
+        
+        # Create visualizations
+        analyzer.plot_driver_race_ratio()
+        analyzer.plot_yearly_elo_distribution()
+        analyzer.plot_driver_vs_teammates('max_verstappen')
+        
+        # Access specific results
+        elo_history = results['elo_history']
+        print(f"\nTotal races processed: {elo_history['raceId'].nunique()}")
+        print(f"Total drivers: {elo_history['driverRef'].nunique()}")
+        analyzer.save_results()
         
