@@ -72,3 +72,15 @@ class DatasetManager:
         
         self._check_required_columns(data)
         return True
+    
+    def get_years(self) -> list:
+        """Get a list of years from the training dataset.
+
+        :return: List of years.
+        :rtype: list
+        """    
+        train_data = self.get_training_data()
+        if 'year' not in train_data.columns:
+            raise ValueError("Year column is missing in the training data")
+        
+        return train_data['year'].unique().tolist()

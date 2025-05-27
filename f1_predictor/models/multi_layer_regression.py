@@ -148,3 +148,35 @@ class MultiLayerRegression(Model):
 
     def _start_tensorboard(self):
         os.system(f"tensorboard --logdir {self.log_dir}")
+        
+    def trainByYear(self, training_data: tuple, training_config: dict) -> None:
+        ground_truth = training_data[-1]
+        training_data = training_data[0]
+        years = training_data['year'].unique()
+        max_year = max(years)
+        min_year = min(years)
+        for year in range(min_year, max_year + 1):
+            
+            if year > min_year and os.path.exists(f"model_weights_{year-1}.weights.h5"):
+                print("loading model weights for year", year-1)
+                self._model.load_weights(f"model_weights_{year-1}.weights.h5")
+            
+            print("start of year", year)    
+            training_data_year = training_data[training_data['year'] == year]
+            ground_truth_year = ground_truth[training_data['year'] == year]
+            
+            print("learning for year", year)
+            if training_data_year.empty or ground_truth_year.empty:
+                print(f"No data available for year {year}, skipping...")
+                continue
+            self.fit(training_data_year, ground_truth_year)
+            print("finished learning for year", year)
+            
+            # Save the model weights
+            self._model.save_weights(f"model_weights_{year}.weights.h5")
+            
+            # Clear the session and reset optimizer state
+            tf.keras.backend.clear_session()
+            
+            
+            

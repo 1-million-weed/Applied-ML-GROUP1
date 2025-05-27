@@ -100,8 +100,14 @@ class Pipeline:
         elif self.model_name == "MultiLayerRegression":
             model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
 
-        model.fit(*self._load_training_data())
+        training_data = self._load_training_data()
+        if self.training_config["by_year"] and self.model_name == "MultiLayerRegression":
+            print(training_data[0].head())
+            model.trainByYear(training_data, self.training_config)
+        else:
+            model.fit(training_data)
         self.model_manager.save_model(model)
+        
         if self.train_plots:
             if hasattr(model, 'plot_feature_importance'):
                 model.plot_feature_importance(feature_names=self.training_config["training_features"])
