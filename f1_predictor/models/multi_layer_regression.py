@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import tensorflow as tf
-from tensorflow import keras
+import keras
 from .model import Model
 from threading import Thread
 import os
@@ -11,6 +11,19 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
+@keras.saving.register_keras_serializable()
+class PositionWeightedMSE(keras.losses.Loss):
+    def __init__(self, name="position_weighted_mse", reduction="sum_over_batch_size"):
+        super().__init__(name=name, reduction=reduction) 
+    
+    def call(self, y_true, y_pred):
+        # Convert positions to weights - lower positions get higher weights
+        weights = 1.0 / (y_true + 0.1)
+        
+        squared_errors = tf.square(y_true - y_pred)
+        weighted_errors = weights * squared_errors
+        
+        return weighted_errors
 
 
 class MultiLayerRegression(Model):
@@ -25,7 +38,7 @@ class MultiLayerRegression(Model):
         outputs = keras.layers.Dense(1, activation='linear')(x)
 
         self._model = keras.Model(inputs=inputs, outputs=outputs)
-        self._model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
+        self._model.compile(optimizer='adam', loss=PositionWeightedMSE(), metrics=['mae'])
 
         
        
@@ -148,3 +161,4 @@ class MultiLayerRegression(Model):
 
     def _start_tensorboard(self):
         os.system(f"tensorboard --logdir {self.log_dir}")
+        
