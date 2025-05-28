@@ -165,22 +165,39 @@ class MultiLayerRegression(Model):
         # start training from the first year
         for year in range(min_year, max_year + 1):
             
-            if year > min_year and os.path.exists(f"model_weights_{year-1}.weights.h5"):
-                print("loading model weights for year", year-1)
-                self._model.load_weights(f"model_weights_{year-1}.weights.h5")
+            if year > min_year:
+                weights_path = f"model_weights_{year-1}.weights.h5"
+                if os.path.exists(weights_path):
+                    print("loading model weights for year", year-1)
+                    self._model.load_weights(weights_path)
+            if 'year' not in training_data.columns:
+                raise KeyError("The 'year' column is missing from the training_data DataFrame.")
+            training_data_year = training_data[training_data['year'] == year]
+            print(f"Warning: Weights file for year {year-1} not found. Skipping weight loading.")
+            # Align indices of training_data and ground_truth
+            training_data = training_data.reset_index(drop=True)
+            ground_truth = ground_truth.reset_index(drop=True)
             
-            print("start of year", year)    
             training_data_year = training_data[training_data['year'] == year]
             ground_truth_year = ground_truth[training_data['year'] == year]
-            
+            if training_data_year.empty or ground_truth_year.empty:
+                if training_data_year.empty:
+                    print(f"No training data available for year {year}. This might be due to filtering issues or missing data.")
+                if ground_truth_year.empty:
+                    print(f"No ground truth data available for year {year}. Ensure the ground truth aligns with the training data.")
+                print(f"Skipping year {year} due to insufficient data.")
+                continue
             print("learning for year", year)
             if training_data_year.empty or ground_truth_year.empty:
                 print(f"No data available for year {year}, skipping...")
                 continue
             self.fit(training_data_year, ground_truth_year, epochs=100)
             print("finished learning for year", year)
-            
-            # Save the model weights
+            # Reset optimizer state without clearing the entire session
+            self._model.optimizer.iterations.assign(0)
+            self._model.optimizer.learning_rate.assign(self._model.optimizer.learning_rate.numpy())
+            # Save the model weights for the current year using the naming convention:
+            # "model_weights_{year}.weights.h5", where {year} is the year being processed.
             self._model.save_weights(f"model_weights_{year}.weights.h5")
             
             # Clear the session and reset optimizer state
