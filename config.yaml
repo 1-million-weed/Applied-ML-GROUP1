@@ -30,13 +30,13 @@ training:
 # ===============================
 
 evaluation:
-  enabled: false
+  enabled: true
   show_plot: true 
 
 # ===============================
 # Inference Configuration
 # ===============================
 inference:
-  enabled: true
+  enabled: false
   api: true
   streamlit: true
