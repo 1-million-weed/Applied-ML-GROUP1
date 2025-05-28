@@ -43,7 +43,6 @@ class API:
             if not self.dataset_manager.validate_data(input_df):
                 raise HTTPException(status_code=400, detail="Invalid data format")
             prediction = self.model.predict(input_df)
-            print(prediction)
             if hasattr(prediction, "tolist"):
                 prediction = prediction.tolist()
             return {"prediction": prediction}
