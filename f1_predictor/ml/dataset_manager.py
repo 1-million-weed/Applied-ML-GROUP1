@@ -6,7 +6,7 @@ class DatasetManager:
 
     Handles file paths, column presence checks, and basic format validation.
     """
-    def __init__(self) -> None:
+    def __init__(self, training_features: list = []) -> None:
         """Constructor Method to tnitialize the dataset manager.
 
         Sets up the data folder path and expected required columns for validation.
@@ -14,7 +14,7 @@ class DatasetManager:
         currentdir = os.path.dirname(os.path.abspath(__file__))
         parentdir = os.path.dirname(currentdir)
         self.data_folder = os.path.join(parentdir, 'data')
-        self.required_columns = []
+        self.required_columns = training_features
 
     def _check_required_columns(self, df) -> None:
         """Check whether required columns are present in the provided DataFrame.

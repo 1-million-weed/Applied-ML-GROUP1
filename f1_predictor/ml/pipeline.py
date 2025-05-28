@@ -10,7 +10,8 @@ from .api import API
 from ..app.homepage import HomePage
 from ..features.elo_calculator import F1EloAnalyzer
 import pandas as pd
-
+import uvicorn 
+import threading
 
 class Pipeline:
     """The pipeline of the model for Formula 1 predictions.
@@ -45,7 +46,7 @@ class Pipeline:
         self.eval_config = eval_config
         self.inference_config = inference_config
 
-        self.dataset_manager = DatasetManager()
+        self.dataset_manager = DatasetManager(self.training_config["training_features"])
         self.model_name = model_config['name']
         self.model_manager = self._get_model_manager(self.model_name)
 
@@ -156,12 +157,12 @@ class Pipeline:
         """
         Launch inference via API or Streamlit.
         """   
-        model = self.model_manager.load_model()
         if self.api:
-            API(model)
+            api_thread = threading.Thread(target=self.start_api)
+            api_thread.start()
         
         if self.streamlit:
-            app = HomePage()
+            app = HomePage(self.training_config["training_features"].copy())
             app.display()
 
     def elo_calculator(self):
@@ -185,3 +186,7 @@ class Pipeline:
         print(f"Total drivers: {elo_history['driverRef'].nunique()}")
         analyzer.save_results()
         
+    def start_api(self):
+        model = self.model_manager.load_model()
+        api_instance = API(model)
+        uvicorn.run(api_instance.app, host="0.0.0.0", port=8000)
