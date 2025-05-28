@@ -102,10 +102,9 @@ class Pipeline:
 
         training_data = self._load_training_data()
         if self.training_config["by_year"] and self.model_name == "MultiLayerRegression":
-            print(training_data[0].head())
             model.trainByYear(training_data, self.training_config)
         else:
-            model.fit(training_data)
+            model.fit(training_data[0], training_data[1])
         self.model_manager.save_model(model)
         
         if self.train_plots:
@@ -122,7 +121,14 @@ class Pipeline:
         Evaluates the trained model on validation data and return metrics
         """    
         model = self.model_manager.load_model()
-        metrics = model.evaluate(*self._load_validation_data())
+        if self.model_name == "MultiLayerRegression" and self.training_config["by_year"]:
+            for year in self.dataset_manager.get_years():
+                #load validation data for the specific year
+                self.dataset_manager.get_year(year)
+                x_val, y_val = self._load_validation_data()
+                model.evaluate((x_val, y_val))
+        else:
+            model.evaluate(*self._load_validation_data())
 
     def make_features(self) -> None:
         """

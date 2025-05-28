@@ -24,14 +24,14 @@ training:
   ground_truth: "finishing_position"
   training_features: ['normalized_lap', 'average_normalized_lap', 'lap_progress', 'current_position_norm', 'normalized_driver_standing', 'normalized_fastest_qualifying', 'position_quali', 'normalized_driver_elo' , 'amount_of_wins', 'points_team', 'year']
   tensorboard: true   #todo
-  by_year: true #only for multi-layer regression 
+  by_year: false #only for multi-layer regression 
 
 # ===============================
 # Evaluation Configuration
 # ===============================
 
 evaluation:
-  enabled: false
+  enabled: true
   show_plot: true 
 
 # ===============================

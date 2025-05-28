@@ -193,9 +193,11 @@ class MultiLayerRegression(Model):
                 continue
             self.fit(training_data_year, ground_truth_year, epochs=100)
             print("finished learning for year", year)
+            
             # Reset optimizer state without clearing the entire session
             self._model.optimizer.iterations.assign(0)
             self._model.optimizer.learning_rate.assign(self._model.optimizer.learning_rate.numpy())
+            
             # Save the model weights for the current year using the naming convention:
             # "model_weights_{year}.weights.h5", where {year} is the year being processed.
             self._model.save_weights(f"model_weights_{year}.weights.h5")
