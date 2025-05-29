@@ -26,14 +26,12 @@ class RawInputData(BaseModel):
 
     current_lap: int = Field(..., ge=1, description="Current lap number during the race")
     meeting: int = Field(..., description="Meeting identifier - see MEETING_VALUES_DICT for options")
-    lap_time: Optional[float] = Field(None, gt=0, description="Lap time in seconds (optional)")
 
     class Config:
         schema_extra = {
             "example": {
                 "current_lap": 45,
-                "meeting": 1,
-                "lap_time": 78.456
+                "meeting": 1  # Australian GP
             }
         }
 
@@ -42,7 +40,6 @@ class DriverPrediction(BaseModel):
     """Individual driver prediction result."""
     position: int = Field(..., ge=1, le=20, description="Predicted final position (1-20)")
     racer_name: str = Field(..., description="Driver name")
-    confidence: Optional[float] = Field(None, ge=0, le=1, description="Prediction confidence (0-1)")
 
 
 class PredictionResponse(BaseModel):
@@ -55,8 +52,8 @@ class PredictionResponse(BaseModel):
         schema_extra = {
             "example": {
                 "predictions": [
-                    {"position": 1, "racer_name": "Max Verstappen", "confidence": 0.85},
-                    {"position": 2, "racer_name": "Lewis Hamilton", "confidence": 0.72}
+                    {"position": 1, "racer_name": "Max Verstappen"},
+                    {"position": 2, "racer_name": "Lewis Hamilton"}
                 ],
                 "race_info": {
                     "meeting_name": "Australian GP",
@@ -104,9 +101,7 @@ class API:
 
             ### Features:
             - **Real-time Predictions**: Get position forecasts during live races
-            - **Multiple Circuits**: Support for 8 major F1 circuits (so far)
-            - **Historical Context**: Leverages comprehensive F1 historical data
-            - **Confidence Scoring**: Reliability metrics for each prediction [not yet implemented]
+            - **Multiple Circuits**: Support for 8 major F1 circuits (races done this year)
 
             ### Supported Meetings:
             - 1: Australian GP,
@@ -145,7 +140,7 @@ class API:
             """Get list of supported F1 meetings/circuits."""
             return {
                 "meetings": RawInputData.MEETING_VALUES_DICT,
-                "total_count": len(RawInputData.MEETING_VALUES_DICT)
+                "total_count": len(RawInputData.MEETING_VALUES_DICT) # TODO: add more meet information
             }
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
@@ -157,19 +152,17 @@ class API:
                 for where each driver will finish in the final race standings.
 
                 **Request Body**:
-                - `current_lap` (int): Current lap number (must be ≥ 1)
-                - `meeting` (int): Circuit identifier (1–8, see `/meetings` endpoint)
-                - `lap_time` (float, optional): Current lap time in seconds
+                - `current_lap` (int, optional): Current lap number (must be ≥ 1) (default: 1)
+                - `meeting` (int, optional): Circuit identifier (1–8, see `/meetings` endpoint) (default: 1)
 
                 **Returns**:
                 A `PredictionResponse` object containing:
                 - Final predicted positions for each driver
                 - Race context information (circuit, lap, totals)
                 - Prediction metadata (timestamp, model version, etc.)
-                - *(Confidence scoring to be added soon)*
 
                 **Errors**:
-                - `400`: Invalid meeting ID or parameters
+                - `400`: Invalid meeting ID or lap number
                 - `422`: Input validation failed
                 - `500`: Internal server or prediction error
 
@@ -179,8 +172,7 @@ class API:
                 POST /predict
                 {
                   "current_lap": 45,
-                  "meeting": 1,
-                  "lap_time": 78.456
+                  "meeting": 1
                 }
                 ```
             """
@@ -216,11 +208,10 @@ class API:
             # Extract user selections
             selected_meeting = input_data.meeting
             selected_lap = input_data.current_lap
-            selected_lap_time = input_data.lap_time
             meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
 
             logger.info(
-                f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}, Lap Time: {selected_lap_time}")
+                f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
 
             # TODO: Query dataset manager for complete race context
             race_context = self._get_race_context(selected_meeting, selected_lap)
@@ -229,7 +220,6 @@ class API:
             model_input = self._prepare_model_input(
                 meeting=selected_meeting,
                 current_lap=selected_lap,
-                lap_time=selected_lap_time,
                 race_context=race_context
             )
 
@@ -247,7 +237,6 @@ class API:
                     "meeting_id": selected_meeting,
                     "meeting_name": meeting_name,
                     "current_lap": selected_lap,
-                    "provided_lap_time": selected_lap_time,
                     **race_context  # Additional context from dataset
                 },
                 metadata=self._generate_metadata()
@@ -292,8 +281,7 @@ class API:
             # Add more contextual data as needed
         }
 
-    def _prepare_model_input(self, meeting: int, current_lap: int,
-                             lap_time: Optional[float], race_context: Dict) -> any:
+    def _prepare_model_input(self, meeting: int, current_lap: int, race_context: Dict) -> any:
         """Prepare input data for the ML model.
 
         Combines user selections with contextual race data to create
@@ -302,7 +290,6 @@ class API:
         Args:
             meeting: Meeting/circuit identifier
             current_lap: Current lap number
-            lap_time: Optional lap time
             race_context: Additional race context data
 
         Returns:
@@ -316,7 +303,6 @@ class API:
         model_input = {
             'meeting_id': meeting,
             'current_lap': current_lap,
-            'lap_time': lap_time,
             **race_context,
             # TODO: Add other features your model expects:
             # - historical performance at this circuit
@@ -337,7 +323,7 @@ class API:
                            Expected format: (positions, driver_names) or similar
 
         Returns:
-            List of DriverPrediction objects with position, name, and confidence
+            List of DriverPrediction objects with position and name
         """
         # TODO: Implement based on your model's output format
 
@@ -350,13 +336,10 @@ class API:
             positions, driver_names = raw_predictions  # TODO: Update based on actual output format
 
             for position, driver_name in zip(positions, driver_names):
-                # TODO: Calculate confidence score based on your model's capabilities
-                confidence = self._calculate_confidence(position, driver_name)
 
                 predictions.append(DriverPrediction(
                     position=int(position),
-                    racer_name=str(driver_name),
-                    confidence=confidence
+                    racer_name=str(driver_name)
                 ))
 
         except Exception as e:
@@ -367,26 +350,6 @@ class API:
         # Sort by predicted position
         predictions.sort(key=lambda x: x.position)
         return predictions
-
-    def _calculate_confidence(self, position: int, driver_name: str) -> Optional[float]:
-        """Calculate prediction confidence score.
-
-        Args:
-            position: Predicted position
-            driver_name: Driver name
-
-        Returns:
-            Confidence score between 0 and 1, or None if not available
-        """
-        # TODO: Implement confidence calculation based on your model
-        # Options:
-        # - Model probability outputs
-        # - Historical accuracy for this driver/circuit combination
-        # - Prediction uncertainty metrics
-        # - Ensemble model agreement
-
-        # Placeholder - replace with actual implementation
-        return 0.75  # TODO: Calculate actual confidence
 
     def _generate_metadata(self) -> Dict:
         """Generate prediction metadata.
