@@ -90,26 +90,49 @@ class Pipeline:
 
         Also includes to visualize feature importance or training loss.
         """
-        if self.model_name == "XGBClassifier":
-            model = XGBClassifier()
-        elif self.model_name == "XGBRegressor":
-            model = XGBRegressor()
-        elif self.model_name == "RandomForestClassifier":
-            model = RandomForest()
-        elif self.model_name == "MultiLayerPerceptron":
-            model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
-        elif self.model_name == "MultiLayerRegression":
-            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+        train_data = self._load_training_data()
+        self.model_manager = self._get_model_manager(self.model_name)
+        
+        # Get input shape from training features
+        input_shape = len(self.training_config["training_features"])
+        
+        if self.model_name == "MultiLayerRegression":
+            # Initialize model with correct input shape
+            model = MultiLayerRegression(input_shape=input_shape)
+            
+            # Train sequentially by year
+            model.fit_sequential_years(
+                train_data=train_data,
+                epochs=300,
+                batch_size=2**12,
+                validation_split=0.2,
+                early_stopping_patience=10
+            )
+            
+            # Plot training metrics
+            model.plot_training_metrics()
+            
+        else:
+            if self.model_name == "XGBClassifier":
+                model = XGBClassifier()
+            elif self.model_name == "XGBRegressor":
+                model = XGBRegressor()
+            elif self.model_name == "RandomForestClassifier":
+                model = RandomForest()
+            elif self.model_name == "MultiLayerPerceptron":
+                model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+            elif self.model_name == "MultiLayerRegression":
+                model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
 
-        model.fit(*self._load_training_data())
-        self.model_manager.save_model(model)
-        if self.train_plots:
-            if hasattr(model, 'plot_feature_importance'):
-                model.plot_feature_importance(feature_names=self.training_config["training_features"])
-            elif hasattr(model, 'plot_loss'):
-                model.plot_loss()
-            else:
-                print("Model does not have a plot method.")
+            model.fit(*self._load_training_data())
+            self.model_manager.save_model(model)
+            if self.train_plots:
+                if hasattr(model, 'plot_feature_importance'):
+                    model.plot_feature_importance(feature_names=self.training_config["training_features"])
+                elif hasattr(model, 'plot_loss'):
+                    model.plot_loss()
+                else:
+                    print("Model does not have a plot method.")
 
 
     def test(self) -> None:
@@ -139,8 +162,8 @@ class Pipeline:
         training_data = self.dataset_manager.get_training_data()
         x_train = training_data[self.training_config["training_features"]]
         y_train = training_data[self.training_config['ground_truth']]
-        return x_train, y_train
-
+        return x_train, y_train    
+    
     def _load_validation_data(self) -> tuple[pd.DataFrame, pd.Series]:
         """
         Load validation data and extract input features and labels.
@@ -151,7 +174,7 @@ class Pipeline:
         validation_data = self.dataset_manager.get_validation_data()
         x_val = validation_data[self.training_config["training_features"]]
         y_val = validation_data[self.training_config['ground_truth']]
-        return x_val, y_val
+        return x_val, y_val 
 
     def inference(self) -> None:
         """
