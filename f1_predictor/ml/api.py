@@ -4,6 +4,7 @@ from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
 
+from experimental.data_aquisition.openf1_get import OpenF1DataFetcher
 from .dataset_manager import DatasetManager
 
 import pandas 
@@ -93,6 +94,7 @@ class API:
 
         self.model = model
         self.dataset_manager = DatasetManager()
+        self.openf1 = OpenF1DataFetcher()
 
         # Initialize FastAPI app
         self.app = FastAPI(
@@ -143,8 +145,51 @@ class API:
             """Get list of supported F1 meetings/circuits."""
             return {
                 "meetings": RawInputData.MEETING_VALUES_DICT,
-                "total_count": len(RawInputData.MEETING_VALUES_DICT) # TODO: add more meet information
+                "total_count": len(RawInputData.MEETING_VALUES_DICT)
+                # TODO: add more meet information
             }
+
+        @self.app.get("/meetings={meeting_id}", tags=["Info", "query"])
+        async def get_meeting_info(meeting_id: int):
+            """
+            Get detailed information about a specific F1 meeting/circuit.
+
+            **Path Parameters**:
+            - `meeting_id` (int): Identifier for the meeting (1–8)
+
+            **Returns**:
+            - Meeting name
+            - Total laps for the circuit
+            - Additional context (weather, track conditions, etc.)
+
+            **Errors**:
+            - `400`: Invalid meeting ID
+            - `404`: Meeting not found
+
+            **Example**:
+
+            ```json
+            GET /meetings/1
+            {
+              "meeting_name": "Australian GP",
+              "total_laps": 58,
+              "weather_conditions": "dry",
+              "track_temperature": 35.2
+            """
+            if meeting_id not in RawInputData.MEETING_VALUES_DICT:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": "Invalid meeting ID",
+                        "valid_options": list(RawInputData.MEETING_VALUES_DICT.keys()),
+                        "meeting_names": RawInputData.MEETING_VALUES_DICT
+                    }
+                )
+
+            # Now, i need to use the openF1_get class to get more information about the meeting
+            meeting_name = RawInputData.MEETING_VALUES_DICT[meeting_id]
+            meeting_data = self.openf1.get_meeting_data(meeting_id) 
+
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
         async def predict(data: RawInputData):
@@ -263,60 +308,6 @@ class API:
                 }
             )
 
-    def _get_race_context(self, meeting_id: int, current_lap: int) -> Dict:
-        """Retrieve additional race context from dataset manager.
-
-        Args:
-            meeting_id: Selected meeting identifier
-            current_lap: Current lap number
-
-        Returns:
-            Dict containing race context (total laps, weather, etc.)
-        """
-        # TODO: Implement dataset manager query
-        # Example: return self.dataset_manager.get_race_info(meeting_id, current_lap)
-
-        # Placeholder return - replace with actual implementation
-        return {
-            "total_laps": 58,  # TODO: Get actual total laps for this circuit
-            "weather_conditions": "dry",  # TODO: Get current weather
-            "track_temperature": 35.2,  # TODO: Get track conditions
-            # Add more contextual data as needed
-        }
-
-    def _prepare_model_input(self, meeting: int, current_lap: int, race_context: Dict) -> any:
-        """Prepare input data for the ML model.
-
-        Combines user selections with contextual race data to create
-        the input format expected by your trained model.
-
-        Args:
-            meeting: Meeting/circuit identifier
-            current_lap: Current lap number
-            race_context: Additional race context data
-
-        Returns:
-            Model input in the format expected by your trained model
-            (DataFrame, numpy array, dict, etc.)
-        """
-        # TODO: Implement based on your model's expected input format
-        # This is where you'll combine user selections with dataset manager queries
-
-        # Example structure - replace with your actual implementation:
-        model_input = {
-            'meeting_id': meeting,
-            'current_lap': current_lap,
-            **race_context,
-            # TODO: Add other features your model expects:
-            # - historical performance at this circuit
-            # - driver standings
-            # - car performance metrics
-            # - weather conditions
-            # - tire strategies
-            # etc.
-        }
-
-        return model_input
 
     def _process_model_output(self, raw_predictions: any) -> List[DriverPrediction]:
         """Convert raw model output to structured prediction objects.
