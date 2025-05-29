@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
+from .api_pipeline import APIpipeline
 
 from experimental.data_aquisition.openf1_get import OpenF1DataFetcher
 from .dataset_manager import DatasetManager
@@ -260,23 +261,15 @@ class API:
 
             logger.info(
                 f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
+            self.api_pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
+            predictions = self.api_pipeline.run()
+            
 
-            # TODO: Query dataset manager for complete race context
-            race_context = self._get_race_context(selected_meeting, selected_lap)
+            
 
-            # TODO: Prepare model input data by combining user selections with historical/contextual data
-            model_input = self._prepare_model_input(
-                meeting=selected_meeting,
-                current_lap=selected_lap,
-                race_context=race_context
-            )
+            
 
-            # TODO: Get predictions from your trained model
-            # Expected: model returns (positions, driver_names) or similar structure
-            raw_predictions = self.model.predict(model_input)
-
-            # TODO: Process model output into structured predictions
-            structured_predictions = self._process_model_output(raw_predictions)
+            
 
             # Build comprehensive response
             response = PredictionResponse(

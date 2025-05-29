@@ -5,9 +5,10 @@ from ..data_aquisition.season_data_processor import SeasonEloCalculator
 
 
 class APIpipeline:
-    def __init__(self, round: int = 1, lap: int = 1):
+    def __init__(self, model, round: int = 1, lap: int = 1):
         self.round = round
         self.lap = lap
+        self.model = model
         self.sample_generator = SampleGenerator(round=self.round, lap=self.lap)
         self.championship_calculator = ChampionshipCalculator()
         self.season_data_gatherer = SeasonDataGatherer()
