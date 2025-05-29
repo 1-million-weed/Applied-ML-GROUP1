@@ -67,6 +67,9 @@ class SeasonDataGatherer:
         combined_results.to_csv(os.path.join(self.output_dir, "results.csv"), index=False)
     
     def run(self):
+        if os.path.exists(os.path.join(self.output_dir, "combined_laptimes.csv")):
+            print("Data already collected for this season.")
+            return
         self.identify_races()
         self.collect_session_data()
         self.save_data()

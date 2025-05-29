@@ -330,6 +330,9 @@ class SeasonEloCalculator:
         Returns:
             pd.DataFrame or None: Results with ELO if successful, None otherwise
         """
+        if os.path.exists(os.path.join(self.output_dir, 'results_with_elo.csv')):
+            self.logger.info("ELO results already calculated for this season. Skipping calculation.")
+            return pd.read_csv(os.path.join(self.output_dir, 'results_with_elo.csv'))
         try:
             # Set logging level
             if debug_mode:
@@ -368,7 +371,3 @@ class SeasonEloCalculator:
             import traceback
             self.logger.error(traceback.format_exc())
             return None
-
-if __name__ == "__main__":
-    calculator = SeasonEloCalculator()
-    calculator.run(debug_mode=False)

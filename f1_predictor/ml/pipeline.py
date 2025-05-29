@@ -61,7 +61,6 @@ class Pipeline:
 
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
-        self.predict_2025 = inference_config['predict_2025']
 
     def _get_model_manager(self, model_name):
         available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
@@ -158,7 +157,6 @@ class Pipeline:
         """
         Launch inference via API or Streamlit.
         """   
-
         if self.api:
             api_thread = threading.Thread(target=self.start_api)
             api_thread.start()

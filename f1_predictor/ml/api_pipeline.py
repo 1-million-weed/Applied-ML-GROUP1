@@ -1,7 +1,14 @@
-from ..data_aquisition.api_sample_generator import SampleGenerator
-from ..data_aquisition.season_championship import ChampionshipCalculator
-from ..data_aquisition.season_data_gatherer import SeasonDataGatherer
-from ..data_aquisition.season_data_processor import SeasonEloCalculator
+import os 
+import sys
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+# Add the project root to sys.path
+sys.path.append(project_root)
+
+from f1_predictor.data_aquisition.api_sample_generator import SampleGenerator
+from f1_predictor.data_aquisition.season_championship import ChampionshipCalculator
+from f1_predictor.data_aquisition.season_data_gatherer import SeasonDataGatherer
+from f1_predictor.data_aquisition.season_data_processor import SeasonEloCalculator
 
 
 class APIpipeline:
@@ -31,6 +38,6 @@ class APIpipeline:
         self.calculate_season_elo()
         self.calculate_championships()
         samples = self.generate_sample()
-        print(samples)
-
+        return self.model.predict_multiple(samples)
+        
 

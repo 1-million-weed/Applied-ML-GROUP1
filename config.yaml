@@ -38,6 +38,5 @@ evaluation:
 # ===============================
 inference:
   enabled: true
-  predict_2025: true
   api: true
   streamlit: true
