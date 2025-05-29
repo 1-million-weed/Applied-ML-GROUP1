@@ -1,4 +1,5 @@
 from .page import Page
+from .pages.api_demo_normalized import ApiDemoPageNormalized
 from .pages.api_demo import ApiDemoPage
 import streamlit as st
 
@@ -6,7 +7,8 @@ class HomePage(Page):
     def __init__(self, training_features: list):
         super().__init__("Home")
         self.pages = {
-            "API Demo": ApiDemoPage(training_features),
+            "API Demo": ApiDemoPage(),
+            "API Demo Normalized": ApiDemoPageNormalized(training_features)
         }
 
     def display_sidebar(self):

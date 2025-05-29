@@ -6,6 +6,9 @@ import textwrap
 
 from .dataset_manager import DatasetManager
 
+import pandas 
+
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -66,7 +69,7 @@ class PredictionResponse(BaseModel):
                 }
             }
         }
-
+        
 
 class API:
     """F1 Race Prediction API Interface.
@@ -368,3 +371,4 @@ class API:
             # - feature importance
             # - data sources used
         }
+

@@ -6,6 +6,8 @@ from typing import Optional, Tuple, Dict, List
 from pathlib import Path
 import logging
 
+#https://www.kaggle.com/code/lorenzojayd/elo-system-in-formula-1/notebook
+
 class F1DataLoader:
     """Handles loading and initial processing of F1 data"""
     
@@ -66,7 +68,7 @@ class F1DataLoader:
         
         # Select and rename columns
         features_master = ['resultId', 'year', 'round', 'name_x', 'raceId', 
-                          'race_yearAndName', 'driverRef', 'forename', 'surname', 
+                          'race_yearAndName', 'driverRef', 'code', 'forename', 'surname', 
                           'constructorRef', 'name_y', 'positionOrder', 'position', 'driverId']
         
         df_master = df_master[features_master].rename(columns={
@@ -504,7 +506,7 @@ class F1EloAnalyzer:
         # Merge with driver standings
         merged_standings = pd.merge(
             self.raw_data['driver_standings'], 
-            self.elo_history[['raceId', 'driverId', 'elo', 'driverRef', 'constructor_name']], 
+            self.elo_history[['raceId', 'driverId', 'elo', 'driverRef', 'constructor_name', 'code']], 
             on=['raceId', 'driverId'], 
             how='left'
         )
