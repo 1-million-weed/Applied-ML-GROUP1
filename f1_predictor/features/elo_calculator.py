@@ -6,6 +6,8 @@ from typing import Optional, Tuple, Dict, List
 from pathlib import Path
 import logging
 
+#https://www.kaggle.com/code/lorenzojayd/elo-system-in-formula-1/notebook
+
 class F1DataLoader:
     """Handles loading and initial processing of F1 data"""
     
