@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
+from .api_pipeline import APIpipeline
 
 from .dataset_manager import DatasetManager
 
@@ -90,7 +91,6 @@ class API:
 
         self.model = model
         self.dataset_manager = DatasetManager()
-        self.openf1 = OpenF1DataFetcher()
 
         # Initialize FastAPI app
         self.app = FastAPI(
@@ -193,18 +193,20 @@ class API:
             selected_lap = input_data.current_lap
             meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
 
-            logger.info(
-                f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
-
             from .api_pipeline import APIpipeline
 
+            logger.info(
+                f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
+            self.api_pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
+            predictions = self.api_pipeline.run()
 
 
             pipeline = APIpipeline(selected_meeting, selected_lap)
 
             raw_predictions = pipeline.run()
 
-            # TODO: Process model output into structured predictions
+
+
             structured_predictions = self._process_model_output(raw_predictions)
 
             # Build comprehensive response
@@ -214,7 +216,6 @@ class API:
                     "meeting_id": selected_meeting,
                     "meeting_name": meeting_name,
                     "current_lap": selected_lap,
-                    **race_context  # Additional context from dataset
                 },
                 metadata=self._generate_metadata()
             )
