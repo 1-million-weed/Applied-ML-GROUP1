@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import tensorflow as tf
-from tensorflow import keras
+import keras
 from .model import Model
 from threading import Thread
 import os
@@ -77,13 +77,12 @@ class MultiLayerRegression(Model):
             Predicted class labels (finishing positions) as a numpy array.
         """
         predictions = self._model.predict(observations)
-        # Convert predictions to finishing positions
         predicted_positions = np.round(predictions).astype(int)
-        
-        # If return_zero_indexed is False, convert to 1-indexed
-        if not return_zero_indexed:
-            predicted_positions += 1
-            
+        # Clip to valid range
+        if return_zero_indexed:
+            predicted_positions = np.clip(predicted_positions, 0, self.num_classes - 1)
+        else:
+            predicted_positions = np.clip(predicted_positions, 1, self.num_classes)
         return predicted_positions.flatten()
 
     def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
@@ -124,14 +123,18 @@ class MultiLayerRegression(Model):
     def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray) -> None:
         """
         Plot the confusion matrix for the model predictions.
-        
+
         Args:
             y_true: True labels as a numpy array.
             y_pred: Predicted labels as a numpy array.
         """
-        cm = confusion_matrix(y_true, y_pred)
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
         plt.xlabel('Predicted')
         plt.ylabel('True')

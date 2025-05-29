@@ -6,3 +6,5 @@ __pycache__/
 personal_testing
 .vscode
 /logs
+{env_name}
+ml_env
