@@ -70,7 +70,3 @@ class SeasonDataGatherer:
         self.identify_races()
         self.collect_session_data()
         self.save_data()
-
-if __name__ == "__main__":
-    gatherer = SeasonDataGatherer()
-    gatherer.run()

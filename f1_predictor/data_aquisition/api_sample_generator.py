@@ -1,20 +1,26 @@
 import os
 import pandas as pd
 from datetime import timedelta
+import os
+import sys
+
+# Get the absolute path to the project root
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+# Add the project root to sys.path
+sys.path.append(project_root)
+
+# Now you can import using the full path from project root
+from f1_predictor.features.feature_calculator import CalculateSamplesRace
+
 
 class SampleGenerator:
     def __init__(self, round:int = 1, lap:int = 1):
         self.round = round
         self.lap = lap
         self.results = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/results_with_elo_with_championships.csv'))
-        #DriverNumber,BroadcastName,Abbreviation,DriverId,TeamName,TeamColor,TeamId,FirstName,LastName,FullName,HeadshotUrl,CountryCode,Position,ClassifiedPosition,GridPosition,Q1,Q2,Q3,Time,Status,Points,RoundNumber,elo_before,elo_after,DriverChampionshipPosition,TeamChampionshipPoints,DriverWinsCount,DriverWinsCount_before
-        #4,L NORRIS,NOR,norris,McLaren,FF8000,mclaren,Lando,Norris,Lando Norris,https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png,,1.0,1,1.0,,,,0 days 01:42:06.304000,Finished,25.0,1,1130.0,1144.0,1,27,1,0
         self.laptimes = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/combined_laptimes.csv'))
-        #Time,Driver,DriverNumber,LapTime,LapNumber,Stint,PitOutTime,PitInTime,Sector1Time,Sector2Time,Sector3Time,Sector1SessionTime,Sector2SessionTime,Sector3SessionTime,SpeedI1,SpeedI2,SpeedFL,SpeedST,IsPersonalBest,Compound,TyreLife,FreshTyre,Team,LapStartTime,LapStartDate,TrackStatus,Position,Deleted,DeletedReason,FastF1Generated,IsAccurate,RoundNumber
-        #0 days 01:13:00.002000,VER,1,0 days 00:01:59.392000,1.0,1.0,,,,0 days 00:00:20.705000,0 days 00:00:55.250000,,0 days 01:12:04.853000,0 days 01:13:00.058000,249.0,292.0,247.0,215.0,False,INTERMEDIATE,1.0,True,Red Bull Racing,0 days 01:11:00.355000,2025-03-16 04:18:22.974,124,5.0,False,,False,False,1
         self.qualifying = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/combined_qualifyings.csv'))
-        #DriverNumber,BroadcastName,Abbreviation,DriverId,TeamName,TeamColor,TeamId,FirstName,LastName,FullName,HeadshotUrl,CountryCode,Position,ClassifiedPosition,GridPosition,Q1,Q2,Q3,Time,Status,Points,RoundNumber
-        #4,L NORRIS,NOR,norris,McLaren,FF8000,mclaren,Lando,Norris,Lando Norris,https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png.transform/1col/image.png,,1.0,,,0 days 00:01:15.912000,0 days 00:01:15.415000,0 days 00:01:15.096000,,,,1
+        
 
     def simplify_time_string(self, time_str):
         #add a base case
@@ -35,24 +41,83 @@ class SampleGenerator:
         
         # Format: M:SS.mmm
         return f"{minutes}:{seconds:06.3f}"
+    
+    def _convert_laptimes_to_seconds(self, laptimes):
+        """
+        Convert lap times from timedelta to seconds.
+        """
+        if isinstance(laptimes, pd.Series):
+            return laptimes.apply(lambda x: x.total_seconds() if isinstance(x, timedelta) else x)
+        elif isinstance(laptimes, pd.DataFrame):
+            for col in laptimes.select_dtypes(include=['timedelta64[ns]']).columns:
+                laptimes[col] = laptimes[col].apply(lambda x: x.total_seconds() if isinstance(x, timedelta) else x)
+            return laptimes
+        else:
+            raise ValueError("Input must be a pandas Series or DataFrame.")
 
     def generate_sample(self):
         race_result = self.results[self.results['RoundNumber'] == self.round].copy()
         race_qualifying = self.qualifying[self.qualifying['RoundNumber'] == self.round].copy()
         race_laptimes = self.laptimes[self.laptimes['RoundNumber'] == self.round].copy()
 
-        # Apply simplify_time_string to the 'Time' column in race_result and race_qualifying
+        # Apply simplify_time_string to the qualifying times
         race_qualifying['Q1'] = race_qualifying['Q1'].apply(self.simplify_time_string)
         race_qualifying['Q2'] = race_qualifying['Q2'].apply(self.simplify_time_string)
         race_qualifying['Q3'] = race_qualifying['Q3'].apply(self.simplify_time_string)
-        race_laptimes['LapTime'] = race_laptimes['LapTime'].apply(self.simplify_time_string)
-
         
+        # First convert lap times to a simplified string format
+        race_laptimes['LapTime'] = race_laptimes['LapTime'].apply(self.simplify_time_string)
+        
+        # Extract only the needed columns using proper DataFrame indexing
+        laptimes = race_laptimes[['LapNumber', 'DriverNumber', 'LapTime']].copy()
+        
+        # Rename columns
+        laptimes.rename(columns={
+            'LapNumber': 'lap',
+            'DriverNumber': 'driverId',
+            'LapTime': 'milliseconds'
+        }, inplace=True)
+        
+        # Convert the lap time strings to seconds
+        laptimes['milliseconds'] = laptimes['milliseconds'].apply(
+            lambda x: sum(float(part) * multiplier for part, multiplier in 
+                        zip(x.replace(':', '.').split('.'), [60, 1, 0.001]))
+            if isinstance(x, str) and x != "0:00.000" else 0
+        )
+        
+        driver_standings = race_result[['DriverNumber', 'DriverPointsBefore', 'DriverWinsCount_before', 'elo_before', 'TeamName']].copy()
+        driver_standings.rename(columns={
+            'DriverNumber': 'driverId',
+            'DriverPointsBefore': 'points',
+            'DriverWinsCount_before': 'wins',
+            'elo_before': 'elo',
+            'TeamName': 'constructor_name'
+        }, inplace=True)
+
+        qualifying = race_qualifying[['DriverNumber', 'Position', 'Q1', 'Q2', 'Q3']].copy()
+        qualifying.rename(columns={
+            'DriverNumber': 'driverId',
+            'Position': 'position',
+            'Q1': 'q1',
+            'Q2': 'q2',
+            'Q3': 'q3'
+        }, inplace=True)
+
+
+        constructor_standings = race_result[['TeamName', 'TeamPointsBefore']].copy()
+        constructor_standings.rename(columns={
+            'TeamName': 'name',
+            'TeamPointsBefore': 'points'
+        }, inplace=True)
+        self.sample_calculator = CalculateSamplesRace(
+            race_id=self.round,
+            laptimes=laptimes,
+            results=None,
+            driver_standings=driver_standings,
+            qualifying=qualifying,
+            constructor_standings=constructor_standings)
+        return self.sample_calculator.get_samples_for_lap(self.lap)
             
 
 
 
-if __name__ == "__main__":
-    # Example usage
-    sample_gen = SampleGenerator(round=1, lap=2)
-    sample_gen.generate_sample()

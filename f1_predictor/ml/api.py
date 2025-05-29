@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from .dataset_manager import DatasetManager
 import pandas as pd
-from .api_normalizer import ApiNormalizer
+from .api_pipeline import ApiNormalizer
 
 class API:
     """Class for the API interface.

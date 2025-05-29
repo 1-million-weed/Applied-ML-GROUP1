@@ -3,11 +3,11 @@ import numpy as np
 from collections import defaultdict
 
 class ChampionshipCalculator:
-    def __init__(self, csv_file_path, output_file_path=None):
-        self.csv_file_path = csv_file_path
+    def __init__(self, output_file_path=None):
+        self.csv_file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '2025_data/results_with_elo.csv')
         self.output_file_path = output_file_path
         if self.output_file_path is None:
-            self.output_file_path = csv_file_path.replace('.csv', '_with_championships.csv')
+            self.output_file_path = self.csv_file_path.replace('.csv', '_with_championships.csv')
         self.df = None
     
     def calculate_championship_stats(self):
@@ -16,6 +16,8 @@ class ChampionshipCalculator:
         - Driver championship position
         - Team championship points
         - Driver wins count (up to current round)
+        - Driver points before current race
+        - Team points before current race
         """
         
         # Read the CSV file
@@ -32,6 +34,8 @@ class ChampionshipCalculator:
         self.df['TeamChampionshipPoints'] = 0
         self.df['DriverWinsCount'] = 0
         self.df['DriverWinsCount_before'] = 0  # New column for wins before current race
+        self.df['DriverPointsBefore'] = 0  # New column for points before current race
+        self.df['TeamPointsBefore'] = 0  # New column for team points before current race
         
         # Track cumulative stats
         driver_points = defaultdict(int)
@@ -42,10 +46,13 @@ class ChampionshipCalculator:
         for round_num in sorted(self.df['RoundNumber'].unique()):
             round_data = self.df[self.df['RoundNumber'] == round_num].copy()
             
-            # Update win count before the current race for all drivers in this round
+            # Update win count and points before the current race for all drivers in this round
             for idx, row in round_data.iterrows():
                 driver_id = row['DriverId']
+                team_name = row['TeamName']
                 self.df.at[idx, 'DriverWinsCount_before'] = driver_wins[driver_id]
+                self.df.at[idx, 'DriverPointsBefore'] = driver_points[driver_id]
+                self.df.at[idx, 'TeamPointsBefore'] = team_points[team_name]
             
             # First identify winners for this round
             for idx, row in round_data.iterrows():
@@ -130,12 +137,3 @@ class ChampionshipCalculator:
             return updated_df
         return None
 
-# Example usage
-if __name__ == "__main__":
-    # Use the path to the CSV file
-    import os
-    csv_file_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '2025_data/results_with_elo.csv')
-    
-    # Create calculator instance and run
-    calculator = ChampionshipCalculator(csv_file_path)
-    calculator.run()
