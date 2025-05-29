@@ -1,5 +1,4 @@
 from .page import Page
-from .pages.api_demo_normalized import ApiDemoPageNormalized
 from .pages.api_demo import ApiDemoPage
 import streamlit as st
 

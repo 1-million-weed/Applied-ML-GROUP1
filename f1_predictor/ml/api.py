@@ -186,6 +186,7 @@ class API:
             logger.info(f"Processing prediction request: Meeting {input_data.meeting}, Lap {input_data.current_lap}")
 
             # Validate input data
+            print(input_data)
             self.validate_input_data(input_data)
 
             # Extract user selections
@@ -197,21 +198,14 @@ class API:
 
             logger.info(
                 f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
-            self.api_pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
-            predictions = self.api_pipeline.run()
 
-
-            pipeline = APIpipeline(selected_meeting, selected_lap)
+            pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
 
             raw_predictions = pipeline.run()
 
-
-
-            structured_predictions = self._process_model_output(raw_predictions)
-
             # Build comprehensive response
             response = PredictionResponse(
-                predictions=structured_predictions,
+                predictions=raw_predictions,
                 race_info={
                     "meeting_id": selected_meeting,
                     "meeting_name": meeting_name,
@@ -221,6 +215,8 @@ class API:
             )
 
             logger.info(f"Prediction completed successfully for {meeting_name}")
+
+            response = raw_predictions
             return response
 
         except HTTPException:
@@ -237,42 +233,6 @@ class API:
                     "lap": input_data.current_lap
                 }
             )
-
-
-    def _process_model_output(self, raw_predictions: any) -> List[DriverPrediction]:
-        """Convert raw model output to structured prediction objects.
-
-        Args:
-            raw_predictions: Raw output from model.predict()
-                           Expected format: (positions, driver_names) or similar
-
-        Returns:
-            List of DriverPrediction objects with position and name
-        """
-        # TODO: Implement based on your model's output format
-
-        predictions = []
-
-        # Assuming raw_predictions is a tuple of (positions, driver_names)
-        # Adjust based on your actual model output structure
-        try:
-            positions, driver_names = raw_predictions  # TODO: Update based on actual output format
-
-            for position, driver_name in zip(positions, driver_names):
-
-                predictions.append(DriverPrediction(
-                    position=int(position),
-                    racer_name=str(driver_name)
-                ))
-
-        except Exception as e:
-            logger.error(f"Error processing model output: {e}")
-            # TODO: Add fallback handling or re-raise with more context
-            raise ValueError(f"Failed to process model predictions: {e}")
-
-        # Sort by predicted position
-        predictions.sort(key=lambda x: x.position)
-        return predictions
 
     def _generate_metadata(self) -> Dict:
         """Generate prediction metadata.

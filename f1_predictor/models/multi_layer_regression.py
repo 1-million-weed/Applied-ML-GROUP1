@@ -90,7 +90,7 @@ class MultiLayerRegression(Model):
         predictions = {}
         for sample in observations:
             sample = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in sample.items()}
-            input_data = np.array([
+            input_data = {
                 sample['normalized_lap'],
                 sample['average_normalized_lap'],
                 sample['lap_progress'],
@@ -101,8 +101,9 @@ class MultiLayerRegression(Model):
                 sample['normalized_driver_elo'],
                 sample['amount_of_wins'],
                 sample['points_team']
-            ]).reshape(1, -1)
-            input_data = pd.DataFrame.from_dict([input_data], orient='columns')
+            }
+            input_data = pd.DataFrame.from_dict(input_data, orient='columns')
+            print(f"Input data for prediction: {input_data}")
             predictions[sample['driver_id']] = self._model.predict(input_data)
             if not return_zero_indexed:
                 predictions[sample['driver_id']] += 1

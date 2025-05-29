@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 numpy = "==2.0.2"
-keras = "==3.9.2"
 xgboost = "==2.1.4"
 matplotlib = "==3.9.4"
 pandas = "==2.2.3"
@@ -16,6 +15,7 @@ fastapi = "==0.115.12"
 streamlit = "==1.45.1"
 pytest = "*"
 seaborn = "*"
+keras = "*"
 
 [dev-packages]
 
