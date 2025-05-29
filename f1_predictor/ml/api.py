@@ -4,11 +4,7 @@ from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
 
-from experimental.data_aquisition.openf1_get import OpenF1DataFetcher
 from .dataset_manager import DatasetManager
-
-import pandas 
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -149,47 +145,6 @@ class API:
                 # TODO: add more meet information
             }
 
-        @self.app.get("/meetings={meeting_id}", tags=["Info", "query"])
-        async def get_meeting_info(meeting_id: int):
-            """
-            Get detailed information about a specific F1 meeting/circuit.
-
-            **Path Parameters**:
-            - `meeting_id` (int): Identifier for the meeting (1–8)
-
-            **Returns**:
-            - Meeting name
-            - Total laps for the circuit
-            - Additional context (weather, track conditions, etc.)
-
-            **Errors**:
-            - `400`: Invalid meeting ID
-            - `404`: Meeting not found
-
-            **Example**:
-
-            ```json
-            GET /meetings/1
-            {
-              "meeting_name": "Australian GP",
-              "total_laps": 58,
-              "weather_conditions": "dry",
-              "track_temperature": 35.2
-            """
-            if meeting_id not in RawInputData.MEETING_VALUES_DICT:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "Invalid meeting ID",
-                        "valid_options": list(RawInputData.MEETING_VALUES_DICT.keys()),
-                        "meeting_names": RawInputData.MEETING_VALUES_DICT
-                    }
-                )
-
-            # Now, i need to use the openF1_get class to get more information about the meeting
-            meeting_name = RawInputData.MEETING_VALUES_DICT[meeting_id]
-            meeting_data = self.openf1.get_meeting_data(meeting_id) 
-
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
         async def predict(data: RawInputData):
@@ -227,31 +182,11 @@ class API:
             return await self._handle_prediction(data)
 
     async def _handle_prediction(self, input_data: RawInputData) -> PredictionResponse:
-        """Core prediction logic handler.
-
-        Args:
-            input_data: Validated input data from user
-
-        Returns:
-            PredictionResponse: Complete prediction results
-
-        Raises:
-            HTTPException: For various error conditions
-        """
         try:
             logger.info(f"Processing prediction request: Meeting {input_data.meeting}, Lap {input_data.current_lap}")
 
-            # Validate meeting selection
-            if input_data.meeting not in RawInputData.MEETING_VALUES_DICT:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "Invalid meeting ID",
-                        "provided": input_data.meeting,
-                        "valid_options": list(RawInputData.MEETING_VALUES_DICT.keys()),
-                        "meeting_names": RawInputData.MEETING_VALUES_DICT
-                    }
-                )
+            # Validate input data
+            self.validate_input_data(input_data)
 
             # Extract user selections
             selected_meeting = input_data.meeting
@@ -261,19 +196,13 @@ class API:
             logger.info(
                 f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
 
-            # TODO: Query dataset manager for complete race context
-            race_context = self._get_race_context(selected_meeting, selected_lap)
+            from .api_pipeline import APIpipeline
 
-            # TODO: Prepare model input data by combining user selections with historical/contextual data
-            model_input = self._prepare_model_input(
-                meeting=selected_meeting,
-                current_lap=selected_lap,
-                race_context=race_context
-            )
 
-            # TODO: Get predictions from your trained model
-            # Expected: model returns (positions, driver_names) or similar structure
-            raw_predictions = self.model.predict(model_input)
+
+            pipeline = APIpipeline(selected_meeting, selected_lap)
+
+            raw_predictions = pipeline.run()
 
             # TODO: Process model output into structured predictions
             structured_predictions = self._process_model_output(raw_predictions)
@@ -321,7 +250,6 @@ class API:
         """
         # TODO: Implement based on your model's output format
 
-        # Example implementation - replace with your actual model output processing:
         predictions = []
 
         # Assuming raw_predictions is a tuple of (positions, driver_names)
@@ -362,4 +290,29 @@ class API:
             # - feature importance
             # - data sources used
         }
+
+    def validate_input_data(self, input_data):
+
+        if input_data.current_lap < 1:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Invalid lap number",
+                    "provided": input_data.current_lap,
+                    "valid_range": "1 or greater"
+                }
+            )
+
+        if input_data.meeting not in RawInputData.MEETING_VALUES_DICT:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Invalid meeting ID",
+                    "provided": input_data.meeting,
+                    "valid_options": list(RawInputData.MEETING_VALUES_DICT.keys()),
+                    "meeting_names": RawInputData.MEETING_VALUES_DICT
+                }
+            )
+
+        pass
 
