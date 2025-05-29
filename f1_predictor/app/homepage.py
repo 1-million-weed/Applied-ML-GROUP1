@@ -8,7 +8,6 @@ class HomePage(Page):
         super().__init__("Home")
         self.pages = {
             "API Demo": ApiDemoPage(),
-            "API Demo Normalized": ApiDemoPageNormalized(training_features)
         }
 
     def display_sidebar(self):

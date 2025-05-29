@@ -129,6 +129,9 @@ class ChampionshipCalculator:
         Run the complete championship analysis process
         """
         # Process the CSV
+        if os.path.exists(self.output_file_path):
+            print(f"Championship data already calculated and saved to {self.output_file_path}.")
+            return pd.read_csv(self.output_file_path)
         updated_df = self.calculate_championship_stats()
         
         if updated_df is not None:

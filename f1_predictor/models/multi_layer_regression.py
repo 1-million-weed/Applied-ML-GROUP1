@@ -85,6 +85,34 @@ class MultiLayerRegression(Model):
             predicted_positions += 1
             
         return predicted_positions.flatten()
+    
+    def predict_multiple(self, observations: np.ndarray, return_zero_indexed: bool = False) -> dict:
+        predictions = {}
+        for sample in observations:
+            sample = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in sample.items()}
+            input_data = np.array([
+                sample['normalized_lap'],
+                sample['average_normalized_lap'],
+                sample['lap_progress'],
+                sample['current_position_norm'],
+                sample['normalized_driver_standing'],
+                sample['normalized_fastest_qualifying'],
+                sample['position_quali'],
+                sample['normalized_driver_elo'],
+                sample['amount_of_wins'],
+                sample['points_team']
+            ]).reshape(1, -1)
+            input_data = pd.DataFrame.from_dict([input_data], orient='columns')
+            predictions[sample['driver_id']] = self._model.predict(input_data)
+            if not return_zero_indexed:
+                predictions[sample['driver_id']] += 1
+        predictions = {k: v[0][0] for k, v in sorted(predictions.items(), key=lambda item: item[1])}
+        if not return_zero_indexed:
+            predictions = {k: v + 1 for k, v in predictions.items()}
+        return predictions
+
+
+
 
     def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
        
