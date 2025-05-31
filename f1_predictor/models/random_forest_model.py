@@ -58,7 +58,7 @@ class RandomForest(Model):
         self._model.fit(observations, ground_truth)
         self._parameters.update(self._model.get_params())
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
+    def predict(self, x: np.ndarray, round:bool = True) -> np.ndarray:
         """
         Predicts the target values for input features.
 

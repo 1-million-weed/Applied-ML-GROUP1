@@ -109,16 +109,20 @@ class XGBRegressor(Model):
             "booster": self._model.get_booster(),
         }
 
-    def predict(self, observations: np.ndarray) -> np.ndarray:
+    def predict(self, observations: np.ndarray, round:bool =True) -> np.ndarray:
         """
         Make predictions for the target value based on the observations
         by applying the xgboost method .predict on the input data.
 
         :param observations: Feature matrix for prediction.
+        :param round: Whether to round the predictions to the nearest integer.
         :return: Predicted target values
         :return_type: np.ndarray
         """
-        return self._model.predict(observations)
+        predictions = self._model.predict(observations)
+        if round:
+            return np.round(predictions).astype(int)
+        return predictions
     
     def plot_feature_importance(self, feature_names: list, max_num_features: int = 10) -> None:
         """
@@ -143,14 +147,16 @@ class XGBRegressor(Model):
         :param y_test: Test target values.
         :type y_test: np.array
         """
-        y_pred = self.predict(x_test)
+        y_pred = self.predict(x_test, round=False)
         mse = np.mean((y_test - y_pred) ** 2)
         print("Sample predictions:")
         print(y_pred[:5])
         print("Sample ground truth:")
         print(y_test[:5])
-        y_pred = np.round(y_pred).astype(int)
-        self.plot_confusion_matrix(y_test, y_pred)
+        
+        # Get rounded predictions for confusion matrix
+        y_pred_rounded = self.predict(x_test, round=True)
+        self.plot_confusion_matrix(y_test, y_pred_rounded)
 
         print(f"Mean Squared Error: {mse}")
         return {

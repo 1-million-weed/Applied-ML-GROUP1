@@ -6,6 +6,7 @@ from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
 from ..models.multi_layer_regression import MultiLayerRegression
+from ..data_aquisition.data_aquisition_pipeline import DataAquisitionPipeline
 from .api import API
 from ..app.homepage import HomePage
 from ..features.elo_calculator import F1EloAnalyzer
@@ -54,6 +55,7 @@ class Pipeline:
         self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
+        self.gen_2025 = dataset_config['get_2025_data']
         self.calculte_elo = dataset_config['calculate_elo']
         self.train_model = self.training_config['enabled']
         self.test_model = eval_config['enabled']
@@ -75,7 +77,9 @@ class Pipeline:
             self.elo_calculator()
         if self.gen_features:
             self.make_features()
-        
+        if self.gen_2025:
+            self.gen_2025_data()
+
         if self.train_model:
             self.train()
 
@@ -190,3 +194,10 @@ class Pipeline:
         model = self.model_manager.load_model()
         api_instance = API(model)
         uvicorn.run(api_instance.app, host="0.0.0.0", port=8000)
+
+    def gen_2025_data(self):
+        """
+        Generate data for the 2025 season.
+        """
+        pipeline_2025 = DataAquisitionPipeline(current_year=2025)
+        pipeline_2025.run()

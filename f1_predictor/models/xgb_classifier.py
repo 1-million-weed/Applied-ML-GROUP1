@@ -123,7 +123,7 @@ class XGBClassifier(Model):
             "booster": self._model.get_booster(),
         }
 
-    def predict(self, observations: np.ndarray) -> np.ndarray:
+    def predict(self, observations: np.ndarray, round:bool = True) -> np.ndarray:
         """
         Make predictions based on the observations
         by applying the xgboost method .predict on the data.

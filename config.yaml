@@ -8,6 +8,7 @@ model:
 # Dataset Configuration
 # ===============================
 dataset: 
+  get_2025_data: true
   calculate_elo: false
   generate: false
   test_size: 0.2
@@ -37,6 +38,6 @@ evaluation:
 # Inference Configuration
 # ===============================
 inference:
-  enabled: true
+  enabled: false
   api: true
   streamlit: true

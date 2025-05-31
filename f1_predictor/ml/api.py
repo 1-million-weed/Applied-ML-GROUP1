@@ -5,8 +5,6 @@ import logging
 import textwrap
 from .api_pipeline import APIpipeline
 
-from .dataset_manager import DatasetManager
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -90,7 +88,6 @@ class API:
             raise ValueError("Model must have a 'predict' method")
 
         self.model = model
-        self.dataset_manager = DatasetManager()
 
         # Initialize FastAPI app
         self.app = FastAPI(
@@ -194,7 +191,6 @@ class API:
             selected_lap = input_data.current_lap
             meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
 
-            from .api_pipeline import APIpipeline
 
             logger.info(
                 f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")

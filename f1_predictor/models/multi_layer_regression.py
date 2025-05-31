@@ -65,7 +65,7 @@ class MultiLayerRegression(Model):
         self.run_tensorboard()
 
 
-    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:
+    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:
         """
         Predict the most likely class (finishing position) for each observation.
         
@@ -78,7 +78,8 @@ class MultiLayerRegression(Model):
         """
         predictions = self._model.predict(observations)
         # Convert predictions to finishing positions
-        predicted_positions = np.round(predictions).astype(int)
+        if round:
+            predicted_positions = np.round(predictions).astype(int)
         
         # If return_zero_indexed is False, convert to 1-indexed
         if not return_zero_indexed:
@@ -86,35 +87,6 @@ class MultiLayerRegression(Model):
             
         return predicted_positions.flatten()
     
-    def predict_multiple(self, observations: np.ndarray, return_zero_indexed: bool = False) -> dict:
-        predictions = {}
-        for sample in observations:
-            sample = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in sample.items()}
-            input_data = {
-                sample['normalized_lap'],
-                sample['average_normalized_lap'],
-                sample['lap_progress'],
-                sample['current_position_norm'],
-                sample['normalized_driver_standing'],
-                sample['normalized_fastest_qualifying'],
-                sample['position_quali'],
-                sample['normalized_driver_elo'],
-                sample['amount_of_wins'],
-                sample['points_team']
-            }
-            input_data = pd.DataFrame.from_dict(input_data, orient='columns')
-            print(f"Input data for prediction: {input_data}")
-            predictions[sample['driver_id']] = self._model.predict(input_data)
-            if not return_zero_indexed:
-                predictions[sample['driver_id']] += 1
-        predictions = {k: v[0][0] for k, v in sorted(predictions.items(), key=lambda item: item[1])}
-        if not return_zero_indexed:
-            predictions = {k: v + 1 for k, v in predictions.items()}
-        return predictions
-
-
-
-
     def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
        
        mean_squared_error, mean_absolute_error = self._model.evaluate(x_test, y_test)

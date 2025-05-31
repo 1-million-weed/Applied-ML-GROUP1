@@ -9,7 +9,7 @@ class DataFolderManager():
     This includes checking existence, creating the folder if missing, checking if it's empty,
     clearing its contents, listing stored files, and saving/verifying training and test data.
     """
-    def __init__(self, empty_folder=False) -> None:
+    def __init__(self, empty_folder=False, data_folder_path = 'data') -> None:
         """Constructor method to initialize the DataFolderManager and prepare the data directory.
 
         :param empty_folder: Whether to empty the folder if it already exists.
@@ -17,7 +17,7 @@ class DataFolderManager():
         """    
         currentdir = os.path.dirname(os.path.abspath(__file__))
         parentdir = os.path.dirname(currentdir)
-        self.data_folder = os.path.join(parentdir, 'data')
+        self.data_folder = os.path.join(parentdir, data_folder_path)
         self.check_data_folder(self.data_folder)
         self.is_folder_empty = self.check_if_folder_empty(self.data_folder)
         if not self.is_folder_empty and empty_folder:
@@ -107,3 +107,23 @@ class DataFolderManager():
         else:
             print("CSV files do not exist.")
             return False
+        
+    def available_2025_data(self) -> bool:
+        """
+        Check if the 2025 data folder exists and is not empty.
+
+        :return: True if the folder exists and is not empty, False otherwise.
+        :rtype: bool
+        """
+        required_files = [
+            "combined_laptimes.csv",
+            "combined_qualifyings.csv",
+            "results_with_elo_with_championships.csv"
+        ]
+        for file in required_files:
+            if not os.path.exists(os.path.join(self.data_folder, file)):
+                print(f"Required file {file} does not exist in the data folder.")
+                return False
+        if not self.check_if_folder_empty(self.data_folder):
+            print("2025 data folder exists and is not empty.")
+            return True

@@ -171,7 +171,7 @@ class MultiLayerPerceptron(Model):
         self.run_tensorboard()
 
 
-    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:
+    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:
         """
         Predict the most likely class (finishing position) for each observation.
         
