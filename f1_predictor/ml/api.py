@@ -9,6 +9,8 @@ from .api_pipeline import APIpipeline
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# TODO: add year input for api.
+# TODO: meeting cant be zero
 
 class RawInputData(BaseModel):
     """Schema for raw input data from the users."""
