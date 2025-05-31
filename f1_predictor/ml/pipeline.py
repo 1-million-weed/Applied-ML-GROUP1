@@ -10,6 +10,8 @@ from .api import API
 from ..app.homepage import HomePage
 from ..features.elo_calculator import F1EloAnalyzer
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import uvicorn 
 import threading
 
@@ -114,11 +116,66 @@ class Pipeline:
 
     def test(self) -> None:
         """
-        Evaluates the trained model on validation data and return metrics
+        Evaluates the trained model on validation data and returns metrics.
+        For MultiLayerRegression, also tests uncertainty quantification using MC-dropout.
         """    
         model = self.model_manager.load_model()
-        metrics = model.evaluate(*self._load_validation_data())
-
+        x_val, y_val = self._load_validation_data()
+        
+        # Regular evaluation
+        metrics = model.evaluate(x_val, y_val)
+        
+        # For MultiLayerRegression, test uncertainty quantification
+        if self.model_name == "MultiLayerRegression":
+            # Make predictions with uncertainty estimates
+            predictions, uncertainties = model.predict(x_val, with_uncertainty=True, num_samples=100)
+            
+            # Calculate average uncertainty
+            avg_uncertainty = np.mean(uncertainties)
+            print("\nUncertainty Quantification Results:")
+            print(f"Average prediction uncertainty: {avg_uncertainty:.4f}")
+            
+            # Find examples with highest uncertainty
+            n_examples = 5
+            highest_uncertainty_idx = np.argsort(uncertainties)[-n_examples:]
+            
+            print(f"\nTop {n_examples} most uncertain predictions:")
+            print("True Position | Predicted Position | Uncertainty")
+            print("-" * 50)
+            
+            for idx in highest_uncertainty_idx:
+                true_pos = y_val.iloc[idx]
+                pred_pos = predictions[idx]
+                uncertainty = uncertainties[idx]
+                print(f"{true_pos:^13.0f} | {pred_pos:^17.0f} | {uncertainty:^10.4f}")
+            
+            if self.test_plots:
+                # Plot uncertainty distribution
+                plt.figure(figsize=(10, 6))
+                plt.hist(uncertainties, bins=30, edgecolor='black')
+                plt.title('Distribution of Prediction Uncertainties')
+                plt.xlabel('Uncertainty (Standard Deviation)')
+                plt.ylabel('Count')
+                plt.show()
+                
+                # Plot predictions vs true values with uncertainty bars
+                plt.figure(figsize=(10, 6))
+                # Sort by true position for better visualization
+                sort_idx = np.argsort(y_val)
+                y_true_sorted = y_val.iloc[sort_idx]
+                y_pred_sorted = predictions[sort_idx]
+                uncertainties_sorted = uncertainties[sort_idx]
+                
+                plt.errorbar(range(len(y_true_sorted)), y_pred_sorted, 
+                           yerr=uncertainties_sorted, fmt='o', markersize=4,
+                           ecolor='lightgray', alpha=0.5)
+                plt.plot(range(len(y_true_sorted)), y_true_sorted, 'r-', label='True Position')
+                plt.xlabel('Sample Index (sorted by true position)')
+                plt.ylabel('Position')
+                plt.title('Predictions with Uncertainty Intervals')
+                plt.legend()
+                plt.show()
+                
     def make_features(self) -> None:
         """
         Generate features and split them into training and test datasets.
