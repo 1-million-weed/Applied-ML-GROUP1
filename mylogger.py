@@ -143,3 +143,7 @@ class MyJSONFormatter(logging.Formatter):
 class NonErrorFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> Union[bool, logging.LogRecord]:
         return record.levelno <= logging.ERROR
+
+class MatPlotlibFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> Union[bool, logging.LogRecord]:
+        return not (record.name == 'matplotlib.font_manager' and record.levelno == logging.DEBUG)
