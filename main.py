@@ -33,6 +33,9 @@ def Formula1Predictor():
     training_config = config["training"]
     eval_config = config["evaluation"]
     inference_config = config["inference"]
+    logger_config = config["logger"]
+    setup_logging(log_level=logger_config['level'])
+    logger.info("logger initialized")
     pipeline = Pipeline(
         model_config=model_config,
         dataset_config=dataset_config,
@@ -44,6 +47,4 @@ def Formula1Predictor():
 
 
 if __name__ == '__main__':
-    setup_logging()
-    logger.info("logger initialized")
     Formula1Predictor()

@@ -34,7 +34,22 @@ LOG_RECORD_BUILTIN_ATTRS = {
     "taskName",
 }
 
-def setup_logging():
+
+def _get_log_level(log_level):
+    if log_level.upper() == "DEBUG":
+        return logging.DEBUG
+    elif log_level.upper() == "INFO":
+        return logging.INFO
+    elif log_level.upper() == "WARNING":
+        return logging.WARNING
+    elif log_level.upper() == "ERROR":
+        return logging.ERROR
+    else:
+        return logging.CRITICAL
+
+
+def setup_logging(log_level: str = "DEBUG") -> None:
+    level = _get_log_level(log_level)
     pathlib.Path("logs").mkdir(exist_ok=True)
 
     simple_formatter = logging.Formatter(
@@ -82,7 +97,7 @@ def setup_logging():
     listener.start()
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(level)
     root_logger.addHandler(queue_handler)
 
     atexit.register(listener.stop)
