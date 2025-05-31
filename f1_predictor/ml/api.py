@@ -4,14 +4,18 @@ from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
 from .api_pipeline import APIpipeline
+from ..models.model import Model
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
+# TODO: add year input for api.
+# TODO: meeting cant be zero
 
 class RawInputData(BaseModel):
-    """Schema for raw input data from the users."""
+    """Schema for raw input data from the users.
+
+    - :cvar MEETING_VALUES_DICT: Mapping of meeting IDs to race names
+    - :vartype MEETING_VALUES_DICT: dict[int, str]
+    """
     MEETING_VALUES_DICT: ClassVar[dict[int, str]] = {
         1: "Australian GP",
         2: "Chinese Grand Prix",
@@ -36,13 +40,27 @@ class RawInputData(BaseModel):
 
 
 class DriverPrediction(BaseModel):
-    """Individual driver prediction result."""
+    """Individual driver prediction result.
+
+    - :param position: Predicted final position (1-20)
+    - :type position: int
+    - :param racer_name: Driver name
+    - :type racer_name: str
+    """
     position: int = Field(..., ge=1, le=20, description="Predicted final position (1-20)")
     racer_name: str = Field(..., description="Driver name")
 
 
 class PredictionResponse(BaseModel):
-    """Response schema for race predictions."""
+    """Response schema for race predictions.
+
+    - :param predictions: List of driver position predictions
+    - :type predictions: List[DriverPrediction]
+    - :param race_info: Race context information
+    - :type race_info: Dict[str, Any]
+    - :param metadata: Prediction metadata
+    - :type metadata: Dict[str, Any]
+    """
     predictions: List[DriverPrediction] = Field(..., description="List of driver position predictions")
     race_info: Dict[str, Any] = Field(..., description="Race context information")
     metadata: Dict[str, Any] = Field(..., description="Prediction metadata")
@@ -74,22 +92,22 @@ class API:
     Uses a trained ML model to analyze current lap data and predict final driver standings.
     """
 
-    def __init__(self, model) -> None:
+    def __init__(self, model: "Model") -> None:
         """Initialize the API wrapper for the trained F1 prediction model.
 
-        Args:
-            model: Trained model object with a `.predict()` method that returns
-                  (positions, driver_names) tuple or similar structure.
-
-        Raises:
-            ValueError: If model doesn't have required predict method.
+        :param model: Trained model object with a `.predict()` method that returns
+                     (positions, driver_names) tuple or similar structure
+        :type model: Model
+        :raises ValueError: If model doesn't have required predict method
         """
+        self.logger = logging.getLogger(__name__)
         if not hasattr(model, 'predict'):
+            self.logger.error(f"Provided model ({model}) does not have a 'predict' method")
             raise ValueError("Model must have a 'predict' method")
 
         self.model = model
 
-        # Initialize FastAPI app
+        self.logger.info("Initializing FastAPI with model: %s", model.__class__.__name__)
         self.app = FastAPI(
             title="🏎️ F1 Race Predictor API",
             description=textwrap.dedent("""
@@ -122,11 +140,18 @@ class API:
         self._setup_routes()
 
     def _setup_routes(self):
-        """Configure API routes and handlers."""
+        """Configure API routes and handlers.
+
+        Sets up FastAPI endpoints for health checks, meeting information, and predictions.
+        """
 
         @self.app.get("/", tags=["Info"])
         async def root():
-            """API health check and basic information."""
+            """API health check and basic information.
+
+            - :return: API status and supported meetings
+            - :rtype: dict
+            """
             return {
                 "message": "🏎️ F1 Race Predictor API",
                 "status": "active",
@@ -135,7 +160,11 @@ class API:
 
         @self.app.get("/meetings", tags=["Info"])
         async def get_meetings():
-            """Get list of supported F1 meetings/circuits."""
+            """Get list of supported F1 meetings/circuits.
+
+            - :return: Dictionary containing meeting mappings and count
+            - :rtype: dict
+            """
             return {
                 "meetings": RawInputData.MEETING_VALUES_DICT,
                 "total_count": len(RawInputData.MEETING_VALUES_DICT)
@@ -145,45 +174,53 @@ class API:
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
         async def predict(data: RawInputData):
-            """
-                🎯 **Predict final race positions based on current race state**
+            """Predict final race positions based on current race state.
 
-                This endpoint analyzes the current race conditions and provides predictions
-                for where each driver will finish in the final race standings.
+            This endpoint analyzes the current race conditions and provides predictions
+            for where each driver will finish in the final race standings.
 
-                **Request Body**:
-                - `current_lap` (int, optional): Current lap number (must be ≥ 1) (default: 1)
-                - `meeting` (int, optional): Circuit identifier (1–8, see `/meetings` endpoint) (default: 1)
+            - :param data: Input data containing current lap and meeting information
+            - :type data: RawInputData
+            - :return: Prediction response with driver positions and metadata
+            - :rtype: PredictionResponse
+            - :raises HTTPException: 400 for invalid input, 422 for validation errors, 500 for server errors
 
-                **Returns**:
-                A `PredictionResponse` object containing:
-                - Final predicted positions for each driver
-                - Race context information (circuit, lap, totals)
-                - Prediction metadata (timestamp, model version, etc.)
+            **Request Body**:
 
-                **Errors**:
-                - `400`: Invalid meeting ID or lap number
-                - `422`: Input validation failed
-                - `500`: Internal server or prediction error
+            - `current_lap` (int): Current lap number (must be ≥ 1)
+            - `meeting` (int): Circuit identifier (1–8, see `/meetings` endpoint)
 
-                **Example**:
+            **Returns**:
 
-                ```json
+            A `PredictionResponse` object containing:
+
+            - Final predicted positions for each driver
+            - Race context information (circuit, lap, totals)
+            - Prediction metadata (timestamp, model version, etc.)
+
+            **Example**::
+
                 POST /predict
                 {
                   "current_lap": 45,
                   "meeting": 1
                 }
-                ```
             """
             return await self._handle_prediction(data)
 
     async def _handle_prediction(self, input_data: RawInputData) -> PredictionResponse:
-        try:
-            logger.info(f"Processing prediction request: Meeting {input_data.meeting}, Lap {input_data.current_lap}")
+        """Handle the prediction logic for race position forecasting.
 
+        :param input_data: Validated input data from the API request
+        :type input_data: RawInputData
+        :return: Complete prediction response with driver positions and metadata
+        :rtype: PredictionResponse
+        :raises HTTPException: For validation errors or internal prediction failures
+        """
+        try:
+            self.logger.debug("Starting prediction process for input (see extra)", extra=dict(input_data))
+            print(input_data.meeting, input_data.current_lap)
             # Validate input data
-            print(input_data)
             self.validate_input_data(input_data)
 
             # Extract user selections
@@ -191,13 +228,12 @@ class API:
             selected_lap = input_data.current_lap
             meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
 
-            logger.info(
-                f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
-
             pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
 
             # Raw predictions are in format {driver_id: position}
             raw_predictions_dict = pipeline.run()
+
+            self.logger.info("Raw predictions: %s", extra=raw_predictions_dict)
             
             # Convert dictionary to list of DriverPrediction objects
             driver_predictions = []
@@ -224,14 +260,20 @@ class API:
                 metadata=self._generate_metadata()
             )
 
-            logger.info(f"Prediction completed successfully for {meeting_name}")
             return response
 
-        except HTTPException:
+        except HTTPException as http_exc:
             # Re-raise HTTP exceptions as-is
+            self.logger.error("HTTPException occurred during prediction: %s", str(http_exc.detail), extra={
+                "meeting": input_data.meeting,
+                "lap": input_data.current_lap
+            })
             raise
         except Exception as e:
-            logger.error(f"Prediction failed: {str(e)}", exc_info=True)
+            self.logger.error("Unexpected error during prediction: %s", str(e), extra={
+                "meeting": input_data.meeting,
+                "lap": input_data.current_lap
+            })
             raise HTTPException(
                 status_code=500,
                 detail={
@@ -245,8 +287,12 @@ class API:
     def _generate_metadata(self) -> Dict:
         """Generate prediction metadata.
 
-        Returns:
-            Dictionary with prediction metadata
+        :return: Dictionary with prediction metadata including timestamp and version info
+        :rtype: Dict[str, Any]
+
+        .. note::
+           Currently includes prediction timestamp, model version, and API version.
+           Future versions may include training date and feature importance.
         """
         from datetime import datetime
 
@@ -262,7 +308,7 @@ class API:
 
     def validate_input_data(self, input_data):
 
-        if input_data.current_lap < 1:
+        if input_data.current_lap < 1: # TODO:check upper limit
             raise HTTPException(
                 status_code=400,
                 detail={
@@ -282,6 +328,4 @@ class API:
                     "meeting_names": RawInputData.MEETING_VALUES_DICT
                 }
             )
-
-        pass
 

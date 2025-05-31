@@ -1,3 +1,5 @@
+import logging
+
 from .model_manager import Modelmanager
 from .dataset_manager import DatasetManager
 from ..features.make_features import FeatureGenerator
@@ -42,6 +44,10 @@ class Pipeline:
         :param inference_config: Deployment flags for API and Streamlit inference.
         :type inference_config: dict
         """
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Initializing F1 Prediction Pipeline.")
+
         self.model_config = model_config
         self.dataset_config = dataset_config
         self.training_config = training_config
@@ -51,6 +57,8 @@ class Pipeline:
         self.dataset_manager = DatasetManager(self.training_config["training_features"])
         self.model_name = model_config['name']
         self.model_manager = self._get_model_manager(self.model_name)
+
+        self.logger.info(f"Using model: {self.model_name}")
 
         self.train_plots = training_config['show_plot']
         self.test_plots = eval_config['show_plot']
@@ -65,11 +73,35 @@ class Pipeline:
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
 
+        self.logger.info("Pipeline initialized with configuration: %s", self._get_log_context())
+
+    def _get_log_context(self):
+        return {
+            "model_name": self.model_name,
+            "dataset_features": self.training_config["training_features"],
+            "ground_truth": self.training_config['ground_truth'],
+            "random_state": self.dataset_config['random_state'],
+            "test_size": self.dataset_config['test_size'],
+            "empty_folder": self.dataset_config['empty_folder'],
+            "train_enabled": self.train_model,
+            "test_enabled": self.test_model,
+            "inference_enabled": self.run_model,
+            "api_enabled": self.api,
+            "streamlit_enabled": self.streamlit,
+            "elo_calculator_enabled": self.calculte_elo,
+            "gen_features_enabled": self.gen_features,
+            "gen_2025_data_enabled": self.gen_2025,
+            "train_plots_enabled": self.train_plots,
+            "test_plots_enabled": self.test_plots
+        }
+
     def _get_model_manager(self, model_name):
         available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression", 'RandomModel']
         if model_name not in available_models:
+            self.logger.error(f"Model {model_name} is not available. Available models are: {available_models}")
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
         else:
+            self.logger.info(f"Model manager initialized for {model_name}")
             return Modelmanager(model_name)
 
 
