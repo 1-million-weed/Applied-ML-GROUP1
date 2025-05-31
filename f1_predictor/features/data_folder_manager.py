@@ -125,5 +125,4 @@ class DataFolderManager():
                 print(f"Required file {file} does not exist in the data folder.")
                 return False
         if not self.check_if_folder_empty(self.data_folder):
-            print("2025 data folder exists and is not empty.")
             return True
