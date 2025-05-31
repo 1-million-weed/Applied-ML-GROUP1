@@ -4,7 +4,7 @@ from .model import Model
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
-class RandomPredictor(Model):
+class RandomModel(Model):
     """
     A simple random predictor model for Formula 1 finishing positions.
     Predicts a random position between 1-20 for each input.

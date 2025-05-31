@@ -2,7 +2,7 @@
 # Model Configuration
 # ===============================
 model:
-  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+  name: "RandomModel"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression", "RandomModel"]
 
 # ===============================
 # Dataset Configuration
@@ -19,7 +19,7 @@ dataset:
 # Training Configuration
 # ===============================
 training:
-  enabled: false
+  enabled: true
   test_size: 0.2
   show_plot: true   #todo
   ground_truth: "finishing_position"
@@ -31,13 +31,13 @@ training:
 # ===============================
 
 evaluation:
-  enabled: false
+  enabled: true
   show_plot: true 
 
 # ===============================
 # Inference Configuration
 # ===============================
 inference:
-  enabled: true
+  enabled: false
   api: true
   streamlit: false

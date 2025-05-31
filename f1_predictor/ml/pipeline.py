@@ -3,15 +3,16 @@ import logging
 from .model_manager import Modelmanager
 from .dataset_manager import DatasetManager
 from ..features.make_features import FeatureGenerator
+from ..features.elo_calculator import F1EloAnalyzer
 from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
 from ..models.multi_layer_regression import MultiLayerRegression
+from ..models.random_model import RandomModel
 from ..data_aquisition.data_aquisition_pipeline import DataAquisitionPipeline
 from .api import API
 from ..app.homepage import HomePage
-from ..features.elo_calculator import F1EloAnalyzer
 import pandas as pd
 import uvicorn 
 import threading
@@ -95,7 +96,7 @@ class Pipeline:
         }
 
     def _get_model_manager(self, model_name):
-        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression", 'RandomModel']
         if model_name not in available_models:
             self.logger.error(f"Model {model_name} is not available. Available models are: {available_models}")
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
@@ -136,6 +137,8 @@ class Pipeline:
             model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
         elif self.model_name == "MultiLayerRegression":
             model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+        elif self.model_name == "RandomModel":
+            model = RandomModel()
 
         model.fit(*self._load_training_data())
         self.model_manager.save_model(model)
