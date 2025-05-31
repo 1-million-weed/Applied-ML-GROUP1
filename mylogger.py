@@ -66,6 +66,10 @@ def setup_logging():
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(json_formatter)
 
+    matplotlib_filter = MatPlotlibFilter()
+    stderr_handler.addFilter(matplotlib_filter)
+    file_handler.addFilter(matplotlib_filter)
+
     log_queue = queue.Queue()
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
