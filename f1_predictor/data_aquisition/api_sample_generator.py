@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import timedelta
 import os
 import sys
+from typing import Union
 
 # Get the absolute path to the project root
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -13,13 +14,23 @@ from f1_predictor.features.feature_calculator import CalculateSamplesRace
 
 
 class SampleGenerator:
-    def __init__(self, round:int = 1, lap:int = 1):
+    def __init__(self, round: Union[int, str] = 1, lap: Union[int, str] = 1):
         self.round = round
         self.lap = lap
         self.results = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/results_with_elo_with_championships.csv'))
         self.laptimes = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/combined_laptimes.csv'))
         self.qualifying = pd.read_csv(os.path.join(os.path.dirname(__file__), '2025_data/combined_qualifyings.csv'))
         
+        # Handle 'latest' round and lap
+        if round == 'latest':
+            self.round = self.results['RoundNumber'].max()
+        else:
+            self.round = round
+
+        if lap == 'latest':
+            self.lap = self.laptimes[self.laptimes['RoundNumber'] == self.round]['LapNumber'].max()
+        else:
+            self.lap = lap
 
     def simplify_time_string(self, time_str):
         #add a base case
@@ -59,6 +70,10 @@ class SampleGenerator:
         race_qualifying = self.qualifying[self.qualifying['RoundNumber'] == self.round].copy()
         race_laptimes = self.laptimes[self.laptimes['RoundNumber'] == self.round].copy()
 
+        # Check if the lap is valid
+        if self.lap not in race_laptimes['LapNumber'].unique():
+            raise ValueError(f"Lap {self.lap} is not valid for round {self.round}.")
+        
         # Apply simplify_time_string to the qualifying times
         race_qualifying['Q1'] = race_qualifying['Q1'].apply(self.simplify_time_string)
         race_qualifying['Q2'] = race_qualifying['Q2'].apply(self.simplify_time_string)
@@ -116,7 +131,7 @@ class SampleGenerator:
             qualifying=qualifying,
             constructor_standings=constructor_standings)
         return self.sample_calculator.get_samples_for_lap(self.lap)
-            
+
 
 
 

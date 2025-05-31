@@ -80,6 +80,8 @@ class MultiLayerRegression(Model):
         # Convert predictions to finishing positions
         if round:
             predicted_positions = np.round(predictions).astype(int)
+        else:
+            predicted_positions = predictions  # Use raw predictions if round is False
         
         # If return_zero_indexed is False, convert to 1-indexed
         if not return_zero_indexed:

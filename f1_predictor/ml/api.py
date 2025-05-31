@@ -191,17 +191,31 @@ class API:
             selected_lap = input_data.current_lap
             meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
 
-
             logger.info(
                 f"User selections - Meeting: {meeting_name}, Lap: {selected_lap}")
 
             pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
 
-            raw_predictions = pipeline.run()
+            # Raw predictions are in format {driver_id: position}
+            raw_predictions_dict = pipeline.run()
+            
+            # Convert dictionary to list of DriverPrediction objects
+            driver_predictions = []
+            for driver_id, position in raw_predictions_dict.items():
+                # Convert position to integer if it's a numpy type or other
+                position_int = int(position)
+                
+                driver_predictions.append(DriverPrediction(
+                    position=position_int,
+                    racer_name=str(driver_id)
+                ))
+            
+            # Sort predictions by position
+            driver_predictions.sort(key=lambda x: x.position)
 
             # Build comprehensive response
             response = PredictionResponse(
-                predictions=raw_predictions,
+                predictions=driver_predictions,
                 race_info={
                     "meeting_id": selected_meeting,
                     "meeting_name": meeting_name,
@@ -211,8 +225,6 @@ class API:
             )
 
             logger.info(f"Prediction completed successfully for {meeting_name}")
-
-            response = raw_predictions
             return response
 
         except HTTPException:

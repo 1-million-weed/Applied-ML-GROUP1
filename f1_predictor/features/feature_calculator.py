@@ -78,10 +78,14 @@ class CalculateSamplesRace:
         :return: Normalized Series scaled between 0 and 1.
         :rtype: pd.Series
         """
+        # Filter out NaN values
+        series = series.dropna()
+        if series.empty:  # Return a series of zeros if it's empty after dropping NaN
+            return pd.Series([0] * len(series), index=series.index)
         min_val = series.min()
         max_val = series.max()
-        if max_val - min_val == 0:
-            return series
+        if pd.isna(min_val) or pd.isna(max_val) or max_val - min_val == 0:
+            return pd.Series([0] * len(series), index=series.index)  # Return zeros if min or max is NaN or range is zero
         return (series - min_val) / (max_val - min_val)
 
     def _process_qualifying(self) -> None:

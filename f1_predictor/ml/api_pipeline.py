@@ -29,27 +29,49 @@ class APIpipeline:
     
         
     def _predict_multiple(self, observations: np.ndarray, return_zero_indexed = False) -> dict:
-            predictions = {}
-            for sample in observations:
-                sample = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in sample.items()}
-                input_data = {
-                    sample['normalized_lap'],
-                    sample['average_normalized_lap'],
-                    sample['lap_progress'],
-                    sample['current_position_norm'],
-                    sample['normalized_driver_standing'],
-                    sample['normalized_fastest_qualifying'],
-                    sample['position_quali'],
-                    sample['normalized_driver_elo'],
-                    sample['amount_of_wins'],
-                    sample['points_team']
-                }
-                input_data = pd.DataFrame.from_dict(input_data, orient='columns')
-                print(f"Input data for prediction: {input_data}")
-                predictions[sample['driver_id']] = self._model.predict(input_data, round=False)
-                if not return_zero_indexed:
-                    predictions[sample['driver_id']] += 1
-            predictions = {k: v[0][0] for k, v in sorted(predictions.items(), key=lambda item: item[1])}
-            if not return_zero_indexed:
-                predictions = {k: v + 1 for k, v in predictions.items()}
-            return predictions
+        predictions = {}
+        for sample in observations:
+            sample = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in sample.items()}
+            input_data = {
+                'normalized_lap': sample['normalized_lap'],
+                'average_normalized_lap': sample['average_normalized_lap'],
+                'lap_progress': sample['lap_progress'],
+                'current_position_norm': sample['current_position_norm'],
+                'normalized_driver_standing': sample['normalized_driver_standing'],
+                'normalized_fastest_qualifying': sample['normalized_fastest_qualifying'],
+                'position_quali': sample['position_quali'],
+                'normalized_driver_elo': sample['normalized_driver_elo'],
+                'amount_of_wins': sample['amount_of_wins'],
+                'points_team': sample['points_team']
+            }
+            # Ensure no NaN values in the dictionary
+            input_data = {k: (v if not isinstance(v, float) or not np.isnan(v) else 0) for k, v in input_data.items()}
+            # Wrap each value in a list to properly create DataFrame with scalar values
+            input_data = {k: [v] for k, v in input_data.items()}
+            input_data = pd.DataFrame.from_dict(input_data, orient='columns')
+            print(f"Input data for prediction: {input_data}")
+            prediction = self.model.predict(input_data, round=False)
+            print(f"Raw prediction: {prediction}, type: {type(prediction)}")
+            
+            # Extract the prediction value regardless of structure
+            if isinstance(prediction, (list, tuple, np.ndarray)):
+                if len(prediction) > 0:
+                    if isinstance(prediction[0], (list, tuple, np.ndarray)):
+                        pred_value = prediction[0][0]
+                    else:
+                        pred_value = prediction[0]
+                else:
+                    pred_value = 0
+            else:
+                pred_value = prediction  # It's already a scalar
+                
+            predictions[sample['driver_id']] = pred_value
+            
+        # Sort by prediction values and create a new dict
+        sorted_predictions = sorted(predictions.items(), key=lambda item: item[1])
+        if not return_zero_indexed:
+            predictions = {k: v + 1 for k, v in sorted_predictions}
+        else:
+            predictions = {k: v for k, v in sorted_predictions}
+            
+        return predictions
