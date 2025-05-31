@@ -1,66 +1,10 @@
-import atexit
 import yaml
-import logging.config
-import logging.handlers
-import pathlib
-import queue
+import logging
 
 from f1_predictor.ml.pipeline import Pipeline
-from mylogger import MyJSONFormatter
+from mylogger import setup_logging
 
 logger = logging.getLogger(__name__)
-
-
-def setup_logging():
-    pathlib.Path("logs").mkdir(exist_ok=True)
-
-    simple_formatter = logging.Formatter(
-        "%(asctime)s: %(name)s (%(levelname)s) - %(message)s"
-    )
-
-    json_formatter = MyJSONFormatter(
-        fmt_keys={
-            "level": "levelname",
-            "logger": "name",
-            "module": "module",
-            "function": "funcName",
-            "line": "lineno",
-            "thread_name": "threadName"
-        }
-    )
-
-    stderr_handler = logging.StreamHandler()
-    stderr_handler.setLevel(logging.WARNING)
-    stderr_handler.setFormatter(simple_formatter)
-
-    file_handler = logging.handlers.RotatingFileHandler(
-        "logs/f1_predictor.log",
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=3,
-        # encoding="utf-8" # Dont really want this rn
-    )
-
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(json_formatter)
-
-    log_queue = queue.Queue()
-    queue_handler = logging.handlers.QueueHandler(log_queue)
-
-    listener = logging.handlers.QueueListener(
-        log_queue,
-        stderr_handler,
-        file_handler,
-    )
-
-    listener.start()
-
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    root_logger.addHandler(queue_handler)
-
-    atexit.register(listener.stop)
-
-    logger.info("Logging setup complete")
 
 def load_config(path="config.yaml") -> dict:
     """
@@ -98,9 +42,8 @@ def Formula1Predictor():
     )
     pipeline.run()
 
-def get_logger(name: str) -> logging.Logger:
-    return logging.getLogger(name)
 
 if __name__ == '__main__':
     setup_logging()
+    logger.info("logger initialized")
     Formula1Predictor()
