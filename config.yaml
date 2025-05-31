@@ -40,4 +40,4 @@ evaluation:
 inference:
   enabled: true
   api: true
-  streamlit: true
+  streamlit: false
