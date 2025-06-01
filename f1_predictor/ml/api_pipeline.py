@@ -84,3 +84,42 @@ class APIpipeline:
             predictions = {k: v for k, v in sorted_predictions}
             
         return predictions
+    
+
+
+class CurrentYearInfo:
+    """
+    Class to hold information about the current year, round, and lap.
+    This is useful for API endpoints that need
+    to provide information about the
+    current
+
+    season.
+    """
+    def __init__(self, year :int = 2025):
+        data_folder_manager = DataFolderManager(empty_folder=False, data_folder_path='data_aquisition/2025_data')
+        if not data_folder_manager.available_2025_data():
+            raise FileNotFoundError("2025 data is not available. Please run the data acquisition pipeline first.")
+        self.year = year
+        datafolder_path = os.path.join(project_root, 'f1_predictor', 'data_aquisition', '2025_data')
+        self.results = pd.read_csv(os.path.join(datafolder_path, 'results.csv'))
+
+    def list_rounds(self) -> dict:
+        """
+        List all rounds for the current year.
+        
+        Returns:
+            A dictionary mapping event names to round numbers.
+        """
+        round_numbers = self.results['RoundNumber'].unique().tolist()
+        races = {}
+        for round_number in round_numbers:
+            filtered = self.results[self.results['RoundNumber'] == round_number]
+            if not filtered.empty:
+                event_name = filtered.iloc[0]['EventName']
+                races[event_name] = round_number
+        return races
+        
+
+if __name__ == "__main__":
+    print(CurrentYearInfo().list_rounds())

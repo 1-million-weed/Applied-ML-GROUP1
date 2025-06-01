@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, ClassVar, Any
 import logging
 import textwrap
-from .api_pipeline import APIpipeline
+from .api_pipeline import APIpipeline, CurrentYearInfo
 from ..models.model import Model
 
 
@@ -16,16 +16,38 @@ class RawInputData(BaseModel):
     - :cvar MEETING_VALUES_DICT: Mapping of meeting IDs to race names
     - :vartype MEETING_VALUES_DICT: dict[int, str]
     """
-    MEETING_VALUES_DICT: ClassVar[dict[int, str]] = {
-        1: "Australian GP",
-        2: "Chinese Grand Prix",
-        3: "Japanese Grand Prix",
-        4: "Bahrain Grand Prix",
-        5: "Saudi Arabian Grand Prix",
-        6: "Miami Grand Prix",
-        7: "Emilia Romagna Grand Prix",
-        8: "Monaco Grand Prix",
-    }
+    @classmethod
+    def get_full_meeting_names(cls) -> dict[str, int]:
+        """Get full meeting names from CurrentYearInfo."""
+        current_year_info = CurrentYearInfo()
+        return current_year_info.list_rounds()
+    
+    @classmethod
+    def get_meeting_id_to_name(cls) -> dict[int, str]:
+        """Get mapping from meeting ID to full race name."""
+        # Get full names and create inverted dictionary (ID → name)
+        full_names = cls.get_full_meeting_names()
+        return {meeting_id: race_name for race_name, meeting_id in full_names.items()}
+    
+    # Replace direct initialization with class properties
+    @property
+    def FULL_MEETING_NAMES_DICT(self) -> dict[str, int]:
+        return self.get_full_meeting_names()
+        
+    @property
+    def MEETING_VALUES_DICT(self) -> dict[int, str]:
+        return self.get_meeting_id_to_name()
+    
+    # Add class-level properties that can be accessed without instance
+    @classmethod
+    @property
+    def FULL_MEETING_NAMES_DICT_CLASS(cls) -> dict[str, int]:
+        return cls.get_full_meeting_names()
+        
+    @classmethod
+    @property
+    def MEETING_VALUES_DICT_CLASS(cls) -> dict[int, str]:
+        return cls.get_meeting_id_to_name()
 
     current_lap: int = Field(..., ge=1, description="Current lap number during the race")
     meeting: int = Field(..., description="Meeting identifier - see MEETING_VALUES_DICT for options")
@@ -156,7 +178,7 @@ class API:
             return {
                 "message": "🏎️ F1 Race Predictor API",
                 "status": "active",
-                "supported_meetings": RawInputData.MEETING_VALUES_DICT
+                "supported_meetings": RawInputData.get_meeting_id_to_name()
             }
 
         @self.app.get("/meetings", tags=["Info"])
@@ -167,12 +189,28 @@ class API:
             - :rtype: dict
             """
             self.logger.info("Fetching supported meetings")
+            meeting_dict = RawInputData.get_meeting_id_to_name()
             return {
-                "meetings": RawInputData.MEETING_VALUES_DICT,
-                "total_count": len(RawInputData.MEETING_VALUES_DICT)
+                "meetings": meeting_dict,
+                "total_count": len(meeting_dict)
                 # TODO: add more meet information
             }
-
+            
+        @self.app.get("/meetings/full", tags=["Info"])
+        async def get_full_meetings():
+            """Get list of F1 meetings with their full official names.
+            
+            Returns the complete official race names with sponsors and year included.
+            
+            - :return: Dictionary containing full race names mapped to meeting IDs
+            - :rtype: dict
+            """
+            self.logger.info("Fetching full meeting names")
+            full_names = RawInputData.get_full_meeting_names()
+            return {
+                "full_meetings": full_names,
+                "total_count": len(full_names)
+            }
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
         async def predict(data: RawInputData):
@@ -228,7 +266,7 @@ class API:
             # Extract user selections
             selected_meeting = input_data.meeting
             selected_lap = input_data.current_lap
-            meeting_name = RawInputData.MEETING_VALUES_DICT[selected_meeting]
+            meeting_name = RawInputData.get_meeting_id_to_name()[selected_meeting]
 
             pipeline = APIpipeline(self.model, selected_meeting, selected_lap)
 
@@ -320,14 +358,15 @@ class API:
                 }
             )
 
-        if input_data.meeting not in RawInputData.MEETING_VALUES_DICT:
+        meeting_dict = RawInputData.get_meeting_id_to_name()
+        if input_data.meeting not in meeting_dict:
             raise HTTPException(
                 status_code=400,
                 detail={
                     "error": "Invalid meeting ID",
                     "provided": input_data.meeting,
-                    "valid_options": list(RawInputData.MEETING_VALUES_DICT.keys()),
-                    "meeting_names": RawInputData.MEETING_VALUES_DICT
+                    "valid_options": list(meeting_dict.keys()),
+                    "meeting_names": meeting_dict
                 }
             )
 

@@ -52,6 +52,7 @@ class SeasonDataGatherer:
             
             race_results = race_session.results
             race_results['RoundNumber'] = round_number
+            race_results['EventName'] = race['OfficialEventName'].values[0]
             self.results.append(race_results)
     
     def save_data(self):
