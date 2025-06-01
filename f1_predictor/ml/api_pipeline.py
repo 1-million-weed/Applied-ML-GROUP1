@@ -33,7 +33,6 @@ class APIpipeline:
     def run(self):
         samples = self._generate_sample()
         return self._predict_multiple(samples)
-    
         
     def _predict_multiple(self, observations: np.ndarray, return_zero_indexed = False) -> dict:
         predictions = {}
