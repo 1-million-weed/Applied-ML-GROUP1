@@ -84,8 +84,12 @@ class MultiLayerRegression(Model):
             predicted_positions = predictions  # Use raw predictions if round is False
         
         # If return_zero_indexed is False, convert to 1-indexed
-        if not return_zero_indexed:
-            predicted_positions += 1
+            
+        # Clip predictions to valid range
+        if return_zero_indexed:
+            predicted_positions = np.clip(predicted_positions, 0, self.num_classes - 1)
+        else:
+            predicted_positions = np.clip(predicted_positions, 1, self.num_classes)
             
         return predicted_positions.flatten()
     
@@ -132,9 +136,13 @@ class MultiLayerRegression(Model):
             y_true: True labels as a numpy array.
             y_pred: Predicted labels as a numpy array.
         """
-        cm = confusion_matrix(y_true, y_pred)
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
         plt.xlabel('Predicted')
         plt.ylabel('True')
