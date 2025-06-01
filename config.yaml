@@ -41,3 +41,10 @@ inference:
   enabled: false
   api: true
   streamlit: false
+
+# ===============================
+# Logging Configuration
+# ===============================
+
+logger:
+  level: "INFO"  # Options: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+import logging
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
@@ -12,11 +13,17 @@ from f1_predictor.features.data_folder_manager import DataFolderManager
 
 class APIpipeline:
     def __init__(self, model, round: int = 1, lap: int = 1):
+
+        self.logger = logging.getLogger(__name__)
+
         self.round = round
         self.lap = lap
         self.model = model
         self.sample_generator = SampleGenerator(round=self.round, lap=self.lap)
         data_folder_manager = DataFolderManager(empty_folder=False, data_folder_path='data_aquisition/2025_data')
+
+        self.logger.info(f"Initializing API pipeline with round: {self.round}, lap: {self.lap}, model: {self.model}")
+
         if not data_folder_manager.available_2025_data():
             raise FileNotFoundError("2025 data is not available. Please run the data acquisition pipeline first.")
 
@@ -49,9 +56,9 @@ class APIpipeline:
             # Wrap each value in a list to properly create DataFrame with scalar values
             input_data = {k: [v] for k, v in input_data.items()}
             input_data = pd.DataFrame.from_dict(input_data, orient='columns')
-            print(f"Input data for prediction: {input_data}")
+            self.logger.info(f"Input data for prediction", extra={"input_data": input_data.to_dict(orient='records')})
             prediction = self.model.predict(input_data, round=False)
-            print(f"Raw prediction: {prediction}, type: {type(prediction)}")
+            self.logger.info(f"Raw prediction: {prediction}, type: {type(prediction)}")
             
             # Extract the prediction value regardless of structure
             if isinstance(prediction, (list, tuple, np.ndarray)):
@@ -66,9 +73,12 @@ class APIpipeline:
                 pred_value = prediction  # It's already a scalar
                 
             predictions[sample['driver_id']] = pred_value
-            
+
+        self.logger.info("Predictions before sorting", extra={"unsorted_predictions": predictions})
         # Sort by prediction values and create a new dict
         sorted_predictions = sorted(predictions.items(), key=lambda item: item[1])
+        self.logger.info("Sorted predictions", extra={"sorted_predictions": sorted_predictions})
+
         if not return_zero_indexed:
             predictions = {k: v + 1 for k, v in sorted_predictions}
         else:

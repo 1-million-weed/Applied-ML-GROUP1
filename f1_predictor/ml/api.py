@@ -152,6 +152,7 @@ class API:
             - :return: API status and supported meetings
             - :rtype: dict
             """
+            self.logger.info("API root endpoint accessed")
             return {
                 "message": "🏎️ F1 Race Predictor API",
                 "status": "active",
@@ -165,6 +166,7 @@ class API:
             - :return: Dictionary containing meeting mappings and count
             - :rtype: dict
             """
+            self.logger.info("Fetching supported meetings")
             return {
                 "meetings": RawInputData.MEETING_VALUES_DICT,
                 "total_count": len(RawInputData.MEETING_VALUES_DICT)
@@ -206,6 +208,7 @@ class API:
                   "meeting": 1
                 }
             """
+            self.logger.info("Received prediction request", extra={"data": data})
             return await self._handle_prediction(data)
 
     async def _handle_prediction(self, input_data: RawInputData) -> PredictionResponse:
@@ -218,7 +221,6 @@ class API:
         :raises HTTPException: For validation errors or internal prediction failures
         """
         try:
-            self.logger.debug("Starting prediction process for input (see extra)", extra=dict(input_data))
             print(input_data.meeting, input_data.current_lap)
             # Validate input data
             self.validate_input_data(input_data)
@@ -233,7 +235,7 @@ class API:
             # Raw predictions are in format {driver_id: position}
             raw_predictions_dict = pipeline.run()
 
-            self.logger.info("Raw predictions: %s", extra=raw_predictions_dict)
+            self.logger.info("Received raw predictions", extra=raw_predictions_dict)
             
             # Convert dictionary to list of DriverPrediction objects
             driver_predictions = []
@@ -264,13 +266,13 @@ class API:
 
         except HTTPException as http_exc:
             # Re-raise HTTP exceptions as-is
-            self.logger.error("HTTPException occurred during prediction: %s", str(http_exc.detail), extra={
+            self.logger.error("HTTPException occurred during prediction", str(http_exc.detail), extra={
                 "meeting": input_data.meeting,
                 "lap": input_data.current_lap
             })
             raise
         except Exception as e:
-            self.logger.error("Unexpected error during prediction: %s", str(e), extra={
+            self.logger.error("Unexpected error during prediction", str(e), extra={
                 "meeting": input_data.meeting,
                 "lap": input_data.current_lap
             })

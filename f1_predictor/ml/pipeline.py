@@ -58,8 +58,6 @@ class Pipeline:
         self.model_name = model_config['name']
         self.model_manager = self._get_model_manager(self.model_name)
 
-        self.logger.info(f"Using model: {self.model_name}")
-
         self.train_plots = training_config['show_plot']
         self.test_plots = eval_config['show_plot']
 
@@ -73,7 +71,7 @@ class Pipeline:
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
 
-        self.logger.info("Pipeline initialized with configuration: %s", self._get_log_context())
+        self.logger.info("Pipeline initialized from config", self._get_log_context())
 
     def _get_log_context(self):
         return {
