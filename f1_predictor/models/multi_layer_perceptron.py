@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import to_categorical
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 import datetime
 import tensorflow as tf
 from tensorflow import keras
@@ -108,8 +110,7 @@ class MultiLayerPerceptron(Model):
             keras.Input(shape=(input_shape,)),
             #keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
         ])
-        
-        # Add 1000 layers dynamically
+
         for _ in range(5):
             self._model.add(keras.layers.Dense(256, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
 
@@ -258,19 +259,19 @@ class MultiLayerPerceptron(Model):
         :param y_pred: Predicted labels (single-label).
         :type y_pred: np.ndarray
         """
-        from sklearn.metrics import confusion_matrix
-        import seaborn as sns
-
-        # Convert y_true from one-hot encoding to single-label format if necessary
         if len(y_true.shape) > 1 and y_true.shape[1] > 1:
-            y_true = np.argmax(y_true, axis=1)
-
-        cm = confusion_matrix(y_true, y_pred)
+            y_true = np.argmax(y_true, axis=1) + 1 
+    
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
-        plt.xlabel('Predicted Label')
-        plt.ylabel('True Label')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
         plt.show()
 
     def run_tensorboard(self):
