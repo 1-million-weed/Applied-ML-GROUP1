@@ -1,17 +1,22 @@
+import logging
+
 from .model_manager import Modelmanager
 from .dataset_manager import DatasetManager
 from ..features.make_features import FeatureGenerator
+from ..features.elo_calculator import F1EloAnalyzer
 from ..models.xgb_classifier import XGBClassifier
 from ..models.xgb_regressor import XGBRegressor
 from ..models.random_forest_model import RandomForest
 from ..models.multi_layer_perceptron import MultiLayerPerceptron
 from ..models.multi_layer_regression import MultiLayerRegression
+from ..models.random_model import RandomModel
+from ..data_aquisition.data_aquisition_pipeline import DataAquisitionPipeline
 from .api import API
 from ..app.homepage import HomePage
-from ..features.elo_calculator import F1EloAnalyzer
 import pandas as pd
 import uvicorn 
 import threading
+import time
 
 class Pipeline:
     """The pipeline of the model for Formula 1 predictions.
@@ -40,6 +45,10 @@ class Pipeline:
         :param inference_config: Deployment flags for API and Streamlit inference.
         :type inference_config: dict
         """
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.info("Initializing F1 Prediction Pipeline.")
+
         self.model_config = model_config
         self.dataset_config = dataset_config
         self.training_config = training_config
@@ -54,19 +63,46 @@ class Pipeline:
         self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
+        self.show_elo_plots = dataset_config['elo_plots']
+        self.gen_2025 = dataset_config['get_2025_data']
         self.calculte_elo = dataset_config['calculate_elo']
         self.train_model = self.training_config['enabled']
         self.test_model = eval_config['enabled']
         self.run_model = inference_config['enabled']
+        self.tensor_board = training_config['tensorboard']
 
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
 
+        self.logger.info("Pipeline initialized from config", self._get_log_context())
+
+    def _get_log_context(self):
+        return {
+            "model_name": self.model_name,
+            "dataset_features": self.training_config["training_features"],
+            "ground_truth": self.training_config['ground_truth'],
+            "random_state": self.dataset_config['random_state'],
+            "test_size": self.dataset_config['test_size'],
+            "empty_folder": self.dataset_config['empty_folder'],
+            "train_enabled": self.train_model,
+            "test_enabled": self.test_model,
+            "inference_enabled": self.run_model,
+            "api_enabled": self.api,
+            "streamlit_enabled": self.streamlit,
+            "elo_calculator_enabled": self.calculte_elo,
+            "gen_features_enabled": self.gen_features,
+            "gen_2025_data_enabled": self.gen_2025,
+            "train_plots_enabled": self.train_plots,
+            "test_plots_enabled": self.test_plots
+        }
+
     def _get_model_manager(self, model_name):
-        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+        available_models = ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression", 'RandomModel']
         if model_name not in available_models:
+            self.logger.error(f"Model {model_name} is not available. Available models are: {available_models}")
             raise ValueError(f"Model {model_name} is not available. Available models are: {available_models}")
         else:
+            self.logger.info(f"Model manager initialized for {model_name}")
             return Modelmanager(model_name)
 
 
@@ -75,7 +111,9 @@ class Pipeline:
             self.elo_calculator()
         if self.gen_features:
             self.make_features()
-        
+        if self.gen_2025:
+            self.gen_2025_data()
+
         if self.train_model:
             self.train()
 
@@ -97,9 +135,11 @@ class Pipeline:
         elif self.model_name == "RandomForestClassifier":
             model = RandomForest()
         elif self.model_name == "MultiLayerPerceptron":
-            model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+            model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]), tensor_board=self.tensor_board)
         elif self.model_name == "MultiLayerRegression":
-            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]), tensor_board=self.tensor_board)
+        elif self.model_name == "RandomModel":
+            model = RandomModel()
 
         model.fit(*self._load_training_data())
         self.model_manager.save_model(model)
@@ -117,7 +157,7 @@ class Pipeline:
         Evaluates the trained model on validation data and return metrics
         """    
         model = self.model_manager.load_model()
-        metrics = model.evaluate(*self._load_validation_data())
+        metrics = model.evaluate(*self._load_validation_data(), show_plots=self.test_plots)
 
     def make_features(self) -> None:
         """
@@ -166,7 +206,7 @@ class Pipeline:
             app.display()
 
     def elo_calculator(self):
-        analyzer = F1EloAnalyzer()
+        analyzer = F1EloAnalyzer(show_plots=self.show_elo_plots)
     
         # Run complete analysis
         results = analyzer.run_complete_analysis()
@@ -190,3 +230,10 @@ class Pipeline:
         model = self.model_manager.load_model()
         api_instance = API(model)
         uvicorn.run(api_instance.app, host="0.0.0.0", port=8000)
+
+    def gen_2025_data(self):
+        """
+        Generate data for the 2025 season.
+        """
+        pipeline_2025 = DataAquisitionPipeline(current_year=2025)
+        pipeline_2025.run()

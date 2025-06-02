@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.utils import to_categorical
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 import datetime
 import tensorflow as tf
 from tensorflow import keras
@@ -90,7 +92,7 @@ class MultiLayerPerceptron(Model):
     :param Model: _description_
     :type Model: _type_
     """
-    def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20) -> None:
+    def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20, tensor_board: bool = True) -> None:
         """
         Constructor method to initialize the MultiLayerPerceptron model for classification.
 
@@ -103,12 +105,12 @@ class MultiLayerPerceptron(Model):
         """
         super().__init__(type)
         self.num_classes = num_classes
+        self.tensor_board = tensor_board
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
             #keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
         ])
-        
-        # Add 1000 layers dynamically
+
         for _ in range(5):
             self._model.add(keras.layers.Dense(256, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
 
@@ -168,10 +170,11 @@ class MultiLayerPerceptron(Model):
             callbacks=[early_stopping, tensorboard_callback]
         )
         # Start TensorBoard in a separate thread
-        self.run_tensorboard()
+        if self.tensor_board:
+            self.run_tensorboard()
 
 
-    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:
+    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:
         """
         Predict the most likely class (finishing position) for each observation.
         
@@ -191,14 +194,16 @@ class MultiLayerPerceptron(Model):
             
         return positions
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> dict:
         """
         Evaluate the model on the test data.
 
         :param x_test: Test features.
         :type x_test: np.ndarray
-        :param y_test:  Test target values(one-hot encoded).
+        :param y_test: Test target values (one-hot encoded).
         :type y_test: np.ndarray
+        :param show_plots: If True, display plots (confusion matrix and loss curve).
+        :type show_plots: bool
         :return: Evaluation metrics.
         :rtype: dict
         """
@@ -216,9 +221,16 @@ class MultiLayerPerceptron(Model):
                 y_test_array = y_test_array - 1
                 
             y_test = to_categorical(y_test_array, num_classes=self.num_classes)
-        self.plot_confusion_matrix(y_test, self.predict(x_test))
+        
+        if show_plots:
+            self.plot_confusion_matrix(y_test, self.predict(x_test))
+        
         loss, accuracy = self._model.evaluate(x_test, y_test)
         print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
+        
+        if show_plots:
+            self.plot_loss()
+        
         return {"loss": loss, "accuracy": accuracy}
         
 
@@ -247,19 +259,19 @@ class MultiLayerPerceptron(Model):
         :param y_pred: Predicted labels (single-label).
         :type y_pred: np.ndarray
         """
-        from sklearn.metrics import confusion_matrix
-        import seaborn as sns
-
-        # Convert y_true from one-hot encoding to single-label format if necessary
         if len(y_true.shape) > 1 and y_true.shape[1] > 1:
-            y_true = np.argmax(y_true, axis=1)
-
-        cm = confusion_matrix(y_true, y_pred)
+            y_true = np.argmax(y_true, axis=1) + 1 
+    
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
-        plt.xlabel('Predicted Label')
-        plt.ylabel('True Label')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
         plt.show()
 
     def run_tensorboard(self):

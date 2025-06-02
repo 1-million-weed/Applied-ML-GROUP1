@@ -4,6 +4,8 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 from xgboost import plot_importance
 from typing import Dict
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 import numpy as np
 import os
@@ -24,6 +26,7 @@ class XGBRegressor(Model):
                  learning_rate: float = 0.1,
                  n_estimators: int = 100,
                  gamma: float = 0.01,
+                 num_classes = 20
                  ) -> None:
         """
         Constructor method to initialize the XGBoost regressor model 
@@ -43,6 +46,7 @@ class XGBRegressor(Model):
                                           learning_rate=learning_rate,
                                           n_estimators=n_estimators,
                                           gamma=gamma)
+        self.num_classes = num_classes
         super().__init__(type="regression")
 
     def _validate_parameters(self,
@@ -109,16 +113,24 @@ class XGBRegressor(Model):
             "booster": self._model.get_booster(),
         }
 
-    def predict(self, observations: np.ndarray) -> np.ndarray:
+    def predict(self, observations: np.ndarray, round:bool =True, return_zero_indexed: bool = False) -> np.ndarray:
         """
         Make predictions for the target value based on the observations
         by applying the xgboost method .predict on the input data.
 
         :param observations: Feature matrix for prediction.
+        :param round: Whether to round the predictions to the nearest integer.
         :return: Predicted target values
         :return_type: np.ndarray
         """
-        return self._model.predict(observations)
+        predictions = self._model.predict(observations)
+        if round:
+            return np.round(predictions).astype(int)
+        if return_zero_indexed:
+            predictions = np.clip(predictions, 0, self.num_classes - 1)
+        else:
+            predictions = np.clip(predictions, 1, self.num_classes)
+        return predictions
     
     def plot_feature_importance(self, feature_names: list, max_num_features: int = 10) -> None:
         """
@@ -134,7 +146,7 @@ class XGBRegressor(Model):
         plt.ylabel("Features")
         plt.show()
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> Dict[str, float]:
         """
         Evaluate the model on the test data and print the mse.
 
@@ -142,15 +154,20 @@ class XGBRegressor(Model):
         :type x_test: np.array
         :param y_test: Test target values.
         :type y_test: np.array
+        :param show_plots: Whether to display plots (confusion matrix and feature importance).
+        :type show_plots: bool
         """
-        y_pred = self.predict(x_test)
+        y_pred = self.predict(x_test, round=False)
         mse = np.mean((y_test - y_pred) ** 2)
         print("Sample predictions:")
         print(y_pred[:5])
         print("Sample ground truth:")
         print(y_test[:5])
-        y_pred = np.round(y_pred).astype(int)
-        self.plot_confusion_matrix(y_test, y_pred)
+        
+        # Get rounded predictions for confusion matrix
+        y_pred_rounded = self.predict(x_test, round=True)
+        if show_plots:
+            self.plot_confusion_matrix(y_test, y_pred_rounded)
 
         print(f"Mean Squared Error: {mse}")
         return {
@@ -165,12 +182,13 @@ class XGBRegressor(Model):
             y_true: True labels as a numpy array.
             y_pred: Predicted labels as a numpy array.
         """
-        from sklearn.metrics import confusion_matrix
-        import seaborn as sns
-        
-        cm = confusion_matrix(y_true, y_pred)
-        plt.figure(figsize=(10, 7))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
         plt.xlabel('Predicted')
         plt.ylabel('True')

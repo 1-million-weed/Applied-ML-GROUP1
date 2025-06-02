@@ -58,7 +58,7 @@ class RandomForest(Model):
         self._model.fit(observations, ground_truth)
         self._parameters.update(self._model.get_params())
 
-    def predict(self, x: np.ndarray) -> np.ndarray:
+    def predict(self, x: np.ndarray, round:bool = True) -> np.ndarray:
         """
         Predicts the target values for input features.
 
@@ -70,17 +70,19 @@ class RandomForest(Model):
         """
         return self._model.predict(x)
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, object]:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> Dict[str, object]:
         """
         Evaluates the classification model 
-        using test data, displaying metrics and a confusion matrix.
+        using test data, displaying metrics and optionally a confusion matrix plot.
 
         :param x_test: Test input features.
         :type x_test: np.ndarray
-        :param y_test: Test target values..
+        :param y_test: Test target values.
         :type y_test: np.ndarray
-        :param return: A dictionary conataining Evaluation metrics including accuracy, precision, recall, and F1-score.
-        :type return: dict
+        :param show_plots: Whether to display plots for confusion matrix.
+        :type show_plots: bool
+        :return: A dictionary containing evaluation metrics including accuracy, precision, recall, and F1-score.
+        :rtype: dict
         """
         y_test_pred = self.predict(x_test)
         
@@ -98,7 +100,8 @@ class RandomForest(Model):
         print(classification_report(y_test, y_test_pred))
         
         # Plot confusion matrix if desired
-        self._plot_confusion_matrix(conf_matrix, classes=np.unique(y_test))
+        if show_plots:
+            self._plot_confusion_matrix(conf_matrix, classes=np.unique(y_test))
         
         return {
             "accuracy": accuracy,

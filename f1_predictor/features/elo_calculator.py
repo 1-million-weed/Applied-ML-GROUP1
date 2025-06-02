@@ -6,12 +6,15 @@ from typing import Optional, Tuple, Dict, List
 from pathlib import Path
 import logging
 
+#https://www.kaggle.com/code/lorenzojayd/elo-system-in-formula-1/notebook
+
 class F1DataLoader:
     """Handles loading and initial processing of F1 data"""
     
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, show_plots: bool = False):
         self.data_dir = Path(data_dir)
         self.logger = self._setup_logger()
+        self.show_plots = show_plots
         
     def _setup_logger(self) -> logging.Logger:
         """Setup logging for the class"""
@@ -66,7 +69,7 @@ class F1DataLoader:
         
         # Select and rename columns
         features_master = ['resultId', 'year', 'round', 'name_x', 'raceId', 
-                          'race_yearAndName', 'driverRef', 'forename', 'surname', 
+                          'race_yearAndName', 'driverRef', 'code', 'forename', 'surname', 
                           'constructorRef', 'name_y', 'positionOrder', 'position', 'driverId']
         
         df_master = df_master[features_master].rename(columns={
@@ -90,8 +93,9 @@ class F1DataLoader:
 class F1Visualizer:
     """Handles all visualization functionality"""
     
-    def __init__(self, style: str = 'whitegrid'):
+    def __init__(self, style: str = 'whitegrid', show_plots: bool = True):
         sns.set_style(style)
+        self.show_plots = show_plots
         self.logger = self._setup_logger()
         
     def _setup_logger(self) -> logging.Logger:
@@ -145,6 +149,10 @@ class F1Visualizer:
     
     def _create_ratio_plots(self, df_yearly: pd.DataFrame, df_drivers_per_race: pd.DataFrame):
         """Create the ratio visualization plots"""
+        if not self.show_plots:
+            self.logger.info("Plots are disabled. Skipping visualization.")
+            return
+        
         fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(
             3, 2, gridspec_kw={'width_ratios': [1, 7]}, figsize=(16, 9))
         fig.tight_layout(pad=3)
@@ -187,6 +195,10 @@ class F1Visualizer:
     
     def plot_yearly_elo_distribution(self, df: pd.DataFrame):
         """Plot yearly ELO distribution using ridge plots"""
+        if not self.show_plots:
+            self.logger.info("Plots are disabled. Skipping visualization.")
+            return
+        
         sns.set_theme(style='white', rc={'axes.facecolor': (0, 0, 0, 0), 'axes.linewidth': 2})
         pal = sns.cubehelix_palette(10, rot=-.25, light=.7)
 
@@ -211,6 +223,10 @@ class F1Visualizer:
     
     def plot_driver_vs_teammates(self, df: pd.DataFrame, driver_ref: str):
         """Plot driver ELO vs teammates over time"""
+        if not self.show_plots:
+            self.logger.info("Plots are disabled. Skipping visualization.")
+            return
+        
         if driver_ref not in df['driverRef'].values:
             self.logger.error(f"Driver {driver_ref} not found in data")
             return
@@ -419,13 +435,13 @@ class F1EloCalculator:
 class F1EloAnalyzer:
     """Main analyzer class that coordinates all components"""
     
-    def __init__(self):
+    def __init__(self, show_plots: bool = True):
         currentdir = os.path.dirname(os.path.abspath(__file__))
         f1_dir = os.path.dirname(currentdir)
         data_dir = os.path.join(os.path.dirname(f1_dir), 'data')
         self.data_dir = data_dir
         self.data_loader = F1DataLoader(data_dir)
-        self.visualizer = F1Visualizer()
+        self.visualizer = F1Visualizer(show_plots=show_plots)
         self.logger = self._setup_logger()
         
         # Data storage
@@ -504,7 +520,7 @@ class F1EloAnalyzer:
         # Merge with driver standings
         merged_standings = pd.merge(
             self.raw_data['driver_standings'], 
-            self.elo_history[['raceId', 'driverId', 'elo', 'driverRef', 'constructor_name']], 
+            self.elo_history[['raceId', 'driverId', 'elo', 'driverRef', 'constructor_name', 'code']], 
             on=['raceId', 'driverId'], 
             how='left'
         )

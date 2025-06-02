@@ -4,18 +4,21 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numpy = "==2.0.2"
-keras = "==3.9.2"
-xgboost = "==2.1.4"
-matplotlib = "==3.9.4"
-pandas = "==2.2.3"
-scikit-learn = "==1.6.1"
-tensorflow = "==2.19.0"
-pyyaml = "==6.0.2"
-fastapi = "==0.115.12"
-streamlit = "==1.45.1"
-pytest = "*"
-seaborn = "*"
+numpy=="2.0.2"
+keras=="3.9.2"
+xgboost=="2.1.4"
+matplotlib=="3.9.4"
+pandas=="2.2.3"
+scikit-learn=="1.6.1"
+tensorflow=="2.19.0"
+pyyaml=="6.0.2"
+fastapi=="0.115.12"
+streamlit=="1.45.1"
+pytest=="8.3.5"
+seaborn=="0.13.2"
+httpx=="0.28.1"
+uvicorn=="0.34.2"
+fastf1=="3.5.3"
 
 [dev-packages]
 

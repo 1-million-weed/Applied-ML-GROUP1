@@ -6,7 +6,7 @@ class HomePage(Page):
     def __init__(self, training_features: list):
         super().__init__("Home")
         self.pages = {
-            "API Demo": ApiDemoPage(training_features),
+            "API Demo": ApiDemoPage(),
         }
 
     def display_sidebar(self):

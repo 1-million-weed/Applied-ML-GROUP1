@@ -123,7 +123,7 @@ class XGBClassifier(Model):
             "booster": self._model.get_booster(),
         }
 
-    def predict(self, observations: np.ndarray) -> np.ndarray:
+    def predict(self, observations: np.ndarray, round:bool = True) -> np.ndarray:
         """
         Make predictions based on the observations
         by applying the xgboost method .predict on the data.
@@ -150,7 +150,7 @@ class XGBClassifier(Model):
         plt.ylabel("Features")
         plt.show()
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> dict:
         """
         Evaluate the model on the test data.
 
@@ -158,6 +158,8 @@ class XGBClassifier(Model):
         :type x_test: np.ndarray
         :param y_test: Test target values (Ground truth labels) on test data.
         :type y_test: np.ndarray
+        :param show_plots: Whether to display plots (confusion matrix and feature importance).
+        :type show_plots: bool
         :return: Dictionary with accuracy, precision, recall, and F1 score.
         :rtype: Dict[str, float]
         """
@@ -172,7 +174,9 @@ class XGBClassifier(Model):
         print(f"Precision: {precision}")
         print(f"Recall: {recall}")
         print(f"F1 Score: {f1}")
-        self.plot_confusion_matrix(y_test, y_pred)
+        
+        if show_plots:
+            self.plot_confusion_matrix(y_test, y_pred)
         return {
             "accuracy": accuracy,
             "precision": precision,

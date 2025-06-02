@@ -14,13 +14,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 class MultiLayerRegression(Model):
-    def __init__(self, type: str = "MultiLayerRegression", input_shape: int = 9, num_classes: int = 20) -> None:
+    def __init__(self, type: str = "MultiLayerRegression", input_shape: int = 9, num_classes: int = 20, tensor_board: bool = True) -> None:
         super().__init__(type)
+        self.tensor_board = tensor_board
         self.num_classes = num_classes
         inputs = keras.Input(shape=(input_shape,))
         x = keras.layers.Dense(32, activation='relu')(inputs)
-        x = keras.layers.Dense(16, activation='relu')(x)
-        x = keras.layers.Dense(8, activation='relu')(x)
+        x = keras.layers.Dense(32, activation='relu')(x)
         x = keras.layers.Dense(4, activation='relu')(x)
         outputs = keras.layers.Dense(1, activation='linear')(x)
 
@@ -62,10 +62,11 @@ class MultiLayerRegression(Model):
         )
         
         # Start TensorBoard in a separate thread
-        self.run_tensorboard()
+        if self.tensor_board:
+            self.run_tensorboard()
 
 
-    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False) -> np.ndarray:
+    def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:
         """
         Predict the most likely class (finishing position) for each observation.
         
@@ -78,35 +79,52 @@ class MultiLayerRegression(Model):
         """
         predictions = self._model.predict(observations)
         # Convert predictions to finishing positions
-        predicted_positions = np.round(predictions).astype(int)
+        if round:
+            predicted_positions = np.round(predictions).astype(int)
+        else:
+            predicted_positions = predictions  # Use raw predictions if round is False
         
         # If return_zero_indexed is False, convert to 1-indexed
-        if not return_zero_indexed:
-            predicted_positions += 1
+            
+        # Clip predictions to valid range
+        if return_zero_indexed:
+            predicted_positions = np.clip(predicted_positions, 0, self.num_classes - 1)
+        else:
+            predicted_positions = np.clip(predicted_positions, 1, self.num_classes)
             
         return predicted_positions.flatten()
-
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
-       
-       mean_squared_error, mean_absolute_error = self._model.evaluate(x_test, y_test)
-       print(f"Mean Squared Error: {mean_squared_error}")
-       print(f"Mean Absolute Error: {mean_absolute_error}")
-       y_pred = self.predict(x_test)
-       self.plot_confusion_matrix(y_test, y_pred)
-       accuracy = accuracy_score(y_test, y_pred)
-       precision = precision_score(y_test, y_pred, average="weighted")
-       recall = recall_score(y_test, y_pred, average="weighted")
-       f1 = f1_score(y_test, y_pred, average="weighted")
-       metrics = {
-              "mean_squared_error": mean_squared_error,
-                "mean_absolute_error": mean_absolute_error,
-                "accuracy": accuracy,
-                "precision": precision,
-                "recall": recall,
-                "f1_score": f1
-       }
-       print(metrics)
-       return metrics
+    
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> None:
+        """
+        Evaluate the model and optionally display plots.
+        
+        Args:
+            x_test: Test features as a numpy array.
+            y_test: True labels as a numpy array.
+            show_plots: If True, display plots (confusion matrix).
+        """
+        mean_squared_error, mean_absolute_error = self._model.evaluate(x_test, y_test)
+        print(f"Mean Squared Error: {mean_squared_error}")
+        print(f"Mean Absolute Error: {mean_absolute_error}")
+        y_pred = self.predict(x_test)
+        
+        if show_plots:
+            self.plot_confusion_matrix(y_test, y_pred)
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average="weighted")
+        recall = recall_score(y_test, y_pred, average="weighted")
+        f1 = f1_score(y_test, y_pred, average="weighted")
+        metrics = {
+            "mean_squared_error": mean_squared_error,
+            "mean_absolute_error": mean_absolute_error,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1
+        }
+        print(metrics)
+        return metrics
 
     def plot_loss(self) -> None:
         """
@@ -129,9 +147,13 @@ class MultiLayerRegression(Model):
             y_true: True labels as a numpy array.
             y_pred: Predicted labels as a numpy array.
         """
-        cm = confusion_matrix(y_true, y_pred)
+        labels = np.arange(1, self.num_classes + 1)
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        sns.heatmap(
+            cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=labels, yticklabels=labels
+        )
         plt.title('Confusion Matrix')
         plt.xlabel('Predicted')
         plt.ylabel('True')

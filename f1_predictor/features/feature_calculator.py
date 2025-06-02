@@ -10,7 +10,7 @@ class CalculateSamplesRace:
     """
     def __init__(self, race_id: str,
                  laptimes: pd.DataFrame,
-                 results: pd.DataFrame,
+                 results,
                  driver_standings: pd.DataFrame,
                  qualifying: pd.DataFrame,
                  constructor_standings: pd.DataFrame) -> None:
@@ -78,10 +78,14 @@ class CalculateSamplesRace:
         :return: Normalized Series scaled between 0 and 1.
         :rtype: pd.Series
         """
+        # Filter out NaN values
+        series = series.dropna()
+        if series.empty:  # Return a series of zeros if it's empty after dropping NaN
+            return pd.Series([0] * len(series), index=series.index)
         min_val = series.min()
         max_val = series.max()
-        if max_val - min_val == 0:
-            return series
+        if pd.isna(min_val) or pd.isna(max_val) or max_val - min_val == 0:
+            return pd.Series([0] * len(series), index=series.index)  # Return zeros if min or max is NaN or range is zero
         return (series - min_val) / (max_val - min_val)
 
     def _process_qualifying(self) -> None:
@@ -143,6 +147,8 @@ class CalculateSamplesRace:
         :return: A dictionary mapping driverId to finishing position.
         :rtype: dict[str, int]
         """
+        if self.results is None:
+            return {}
         return self.results[['driverId', 'position']].set_index('driverId').to_dict()['position']
 
     def _process_lap_data(self, lap, current_shortest, amount_of_laps, finishing_positions, driver_history) -> tuple[pd.DataFrame, float]:
@@ -163,7 +169,10 @@ class CalculateSamplesRace:
         :rtype: tuple[pd.DataFrame, float]
         """
         driver_laptimes = self.laptimes[self.laptimes['lap'] == lap].copy()
-        driver_laptimes = driver_laptimes.merge(self.results[['driverId', 'position']], on='driverId', how='left')
+        
+        # Only merge with results if they are available
+        if self.results is not None:
+            driver_laptimes = driver_laptimes.merge(self.results[['driverId', 'position']], on='driverId', how='left')
 
         lap_min = driver_laptimes['milliseconds'].min()
         if lap_min < current_shortest:
@@ -172,8 +181,6 @@ class CalculateSamplesRace:
         driver_laptimes['milliseconds'] = driver_laptimes['milliseconds'] / current_shortest
         driver_laptimes['milliseconds'] = self._min_max_normalize(driver_laptimes['milliseconds'])
         driver_laptimes['lap_progress'] = lap / amount_of_laps
-
-
 
         driver_laptimes = driver_laptimes.sort_values('milliseconds').reset_index(drop=True)
         return driver_laptimes, current_shortest
@@ -271,6 +278,109 @@ class CalculateSamplesRace:
             "amount_of_wins": amount_of_wins,
             'points_team': points_team,
         }
+    
+    def _create_sample_without_finishing_position(self, row, lap, driver_history, total_drivers) -> Union[dict[str, float], None]:
+        """
+        Create a single training sample for a driver without including the finishing position.
+        Used for making predictions for a specific lap.
+
+        :param row: A row from the lap time dataframe containing driver performance metrics.
+        :type row: pd.Series
+        :param lap: The current lap number.
+        :type lap: int
+        :param driver_history: Dictionary storing each driver's history of normalized lap times.
+        :type driver_history: dict[str, list[float]]
+        :param total_drivers: The total number of drivers in the current lap.
+        :type total_drivers: int
+        :return: A dictionary representing a training sample with engineered features for a single driver.
+        :rtype: dict[str, float] | None
+        """
+        driver_id = row.driverId
+        norm_lap = row.milliseconds
+
+        if driver_id not in driver_history:
+            driver_history[driver_id] = []
+        driver_history[driver_id].append(norm_lap)
+        avg_norm = sum(driver_history[driver_id]) / len(driver_history[driver_id])
+        current_rank_norm = row.Index / total_drivers
+
+        points_team = self._get_team_points(driver_id)
+
+        driver_standings_row = self.driver_standings[self.driver_standings['driverId'] == driver_id]
+        normalized_driver_standing = driver_standings_row['points'].values[0] if not driver_standings_row.empty else 0
+
+        qualifying_rows = self.qualifying[self.qualifying['driverId'] == driver_id]
+        if qualifying_rows.empty:
+            normalized_fastest_qualifying = 1.0
+            position_quali = 1.0
+        else:
+            normalized_fastest_qualifying = qualifying_rows['normalized_fastest_qualifying'].values[0]
+            position_quali = qualifying_rows['position'].values[0]
+
+        normalized_driver_elo = self.driver_standings[self.driver_standings['driverId'] == driver_id]['normalized_elo']
+        normalized_driver_elo = normalized_driver_elo.values[0] if not normalized_driver_elo.empty else 0
+
+        amount_of_wins = self._get_amount_of_wins(driver_id)
+
+        return {
+            "race_id": self.race_id,
+            "driver_id": driver_id,
+            "lap": lap,
+            "normalized_lap": norm_lap,
+            "average_normalized_lap": avg_norm,
+            "lap_progress": row.lap_progress,
+            "current_position_norm": current_rank_norm,
+            "normalized_driver_standing": normalized_driver_standing,
+            "normalized_fastest_qualifying": normalized_fastest_qualifying,
+            "position_quali": position_quali,
+            "normalized_driver_elo": normalized_driver_elo,
+            "amount_of_wins": amount_of_wins,
+            'points_team': points_team,
+        }
+    
+    def get_samples_for_lap(self, target_lap: int) -> list[dict[str, float]]:
+        """
+        Calculate samples for a specific lap number for all drivers without including
+        the finishing position (for making predictions).
+        
+        :param target_lap: The lap number to get samples for
+        :type target_lap: int
+        :return: A list of dictionaries representing samples for all drivers at the specified lap
+        :rtype: list[dict[str, float]]
+        """
+        # Check if the target lap exists in the data
+        if target_lap not in self.laptimes['lap'].unique():
+            return []
+            
+        self._process_qualifying()
+        self._normalize_driver_standings()
+        samples = []
+        driver_history = {}
+        
+        # Get finishing positions if results are available
+        finishing_positions = self._get_finishing_positions()  # Will return empty dict if self.results is None
+
+        current_shortest = float('inf')
+        amount_of_laps = self.laptimes['lap'].unique().max()
+        
+        # Process laps up to and including the target lap to build driver history
+        for lap in sorted(self.laptimes['lap'].unique()):
+            if lap > target_lap:
+                break
+                
+            driver_laptimes, current_shortest = self._process_lap_data(
+                lap, current_shortest, amount_of_laps, finishing_positions, driver_history
+            )
+            total_drivers = len(driver_laptimes)
+            
+            # Only add samples for the target lap, using the method that excludes finishing position
+            if lap == target_lap:
+                for row in driver_laptimes.itertuples():
+                    sample = self._create_sample_without_finishing_position(row, lap, driver_history, total_drivers)
+                    if sample:
+                        samples.append(sample)
+                        
+        return samples
 
     def calculate_samples(self) -> list[dict[str, float]]:
         """
@@ -300,3 +410,4 @@ class CalculateSamplesRace:
                     samples.append(sample)
 
         return samples
+

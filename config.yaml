@@ -2,13 +2,15 @@
 # Model Configuration
 # ===============================
 model:
-  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression"]
+  name: "MultiLayerRegression"        # Options: ["RandomForestClassifier", "XGBClassifier", "XGBRegressor", "MultiLayerPerceptron", "MultiLayerRegression", "RandomModel"]
 
 # ===============================
 # Dataset Configuration
 # ===============================
 dataset: 
+  get_2025_data: false
   calculate_elo: false
+  elo_plots: false
   generate: false
   test_size: 0.2
   random_state: 42
@@ -20,10 +22,10 @@ dataset:
 training:
   enabled: false
   test_size: 0.2
-  show_plot: true   #todo
+  show_plot: true 
   ground_truth: "finishing_position"
   training_features: ['normalized_lap', 'average_normalized_lap', 'lap_progress', 'current_position_norm', 'normalized_driver_standing', 'normalized_fastest_qualifying', 'position_quali', 'normalized_driver_elo' , 'amount_of_wins', 'points_team']
-  tensorboard: true   #todo
+  tensorboard: true
 
 # ===============================
 # Evaluation Configuration
@@ -40,3 +42,10 @@ inference:
   enabled: true
   api: true
   streamlit: true
+
+# ===============================
+# Logging Configuration
+# ===============================
+
+logger:
+  level: "CRITICAL"  # Options: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
