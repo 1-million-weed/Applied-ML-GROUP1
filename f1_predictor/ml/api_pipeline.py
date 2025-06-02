@@ -103,6 +103,7 @@ class CurrentYearInfo:
         self.year = year
         datafolder_path = os.path.join(project_root, 'f1_predictor', 'data_aquisition', '2025_data')
         self.results = pd.read_csv(os.path.join(datafolder_path, 'results.csv'))
+        self.laptimes = pd.read_csv(os.path.join(datafolder_path, 'combined_laptimes.csv'))
 
     def list_rounds(self) -> dict:
         """
@@ -120,6 +121,19 @@ class CurrentYearInfo:
                 races[event_name] = round_number
         return races
         
+    def get_max_laps_round(self, round_number: int) -> int:
+        """
+        Get the maximum number of laps for a given round.
+        
+        Args:
+            round_number (int): The round number to check.
+        
+        Returns:
+            int: The maximum number of laps for the specified round.
+        """
+        filtered = self.laptimes[self.laptimes['RoundNumber'] == round_number]
+        if not filtered.empty:
+            return filtered['LapNumber'].max()
+        else:
+            raise ValueError(f"No data found for round {round_number}.")
 
-if __name__ == "__main__":
-    print(CurrentYearInfo().list_rounds())

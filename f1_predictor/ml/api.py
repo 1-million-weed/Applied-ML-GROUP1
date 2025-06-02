@@ -128,11 +128,15 @@ class API:
             raise ValueError("Model must have a 'predict' method")
 
         self.model = model
+        meeting_names = RawInputData.get_full_meeting_names()
+        formatted_meetings = "\n".join(
+            f"- `{key}`: {value}" for key, value in meeting_names.items()
+        )
 
         self.logger.info("Initializing FastAPI with model: %s", model.__class__.__name__)
         self.app = FastAPI(
             title="🏎️ F1 Race Predictor API",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(f"""
             ## F1 Position Prediction API
 
             Predict final race positions for Formula 1 drivers based on current race conditions.
@@ -142,14 +146,7 @@ class API:
             - **Multiple Circuits**: Support for 8 major F1 circuits (races done this year)
 
             ### Supported Meetings:
-            - 1: Australian GP,
-            - 2: Chinese Grand Prix,
-            - 3: Japanese Grand Prix,
-            - 4: Bahrain Grand Prix,
-            - 5: Saudi Arabian Grand Prix,
-            - 6: Miami Grand Prix,
-            - 7: Emilia Romagna Grand Prix,
-            - 8: Monaco Grand Prix,
+            {formatted_meetings}
 
             ### Usage:
             1. Select a meeting from the supported options (see `/meetings` endpoint)
@@ -211,6 +208,40 @@ class API:
                 "full_meetings": full_names,
                 "total_count": len(full_names)
             }
+
+        @self.app.get("/meetings/{meeting_id}/max-laps", tags=["Info"])
+        async def get_max_laps(meeting_id: int):
+            """Get the maximum number of laps for a specific meeting/round.
+            
+            - :param meeting_id: The ID of the meeting/round
+            - :type meeting_id: int
+            - :return: The maximum number of laps for the meeting
+            - :rtype: dict
+            - :raises HTTPException: 404 if the meeting ID is not found
+            """
+            self.logger.info(f"Fetching max laps for meeting ID: {meeting_id}")
+            try:
+                current_year_info = CurrentYearInfo()
+                max_laps = current_year_info.get_max_laps_round(meeting_id)
+                
+                # Get the meeting name if available
+                meeting_dict = RawInputData.get_meeting_id_to_name()
+                meeting_name = meeting_dict.get(meeting_id, "Unknown Meeting")
+                
+                return {
+                    "meeting_id": meeting_id,
+                    "meeting_name": meeting_name,
+                    "max_laps": max_laps
+                }
+            except ValueError as e:
+                self.logger.error(f"Error fetching max laps: {str(e)}")
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "error": "Meeting not found",
+                        "message": str(e)
+                    }
+                )
 
         @self.app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
         async def predict(data: RawInputData):
@@ -347,7 +378,6 @@ class API:
         }
 
     def validate_input_data(self, input_data):
-
         if input_data.current_lap < 1: # TODO:check upper limit
             raise HTTPException(
                 status_code=400,
@@ -357,7 +387,7 @@ class API:
                     "valid_range": "1 or greater"
                 }
             )
-
+        
         meeting_dict = RawInputData.get_meeting_id_to_name()
         if input_data.meeting not in meeting_dict:
             raise HTTPException(
@@ -369,4 +399,23 @@ class API:
                     "meeting_names": meeting_dict
                 }
             )
+
+        # Check if the current lap exceeds max laps for the selected meeting
+        try:
+            current_year_info = CurrentYearInfo()
+            max_laps = current_year_info.get_max_laps_round(input_data.meeting)
+            
+            if input_data.current_lap > max_laps:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": "Invalid lap number",
+                        "provided": input_data.current_lap,
+                        "max_laps": max_laps,
+                        "message": f"The selected meeting only has {max_laps} laps."
+                    }
+                )
+        except ValueError:
+            # If we can't fetch max laps, just skip this validation
+            pass
 
