@@ -20,26 +20,26 @@ dataset:
 # Training Configuration
 # ===============================
 training:
-  enabled: true
+  enabled: false
   test_size: 0.2
   show_plot: true 
   ground_truth: "finishing_position"
   training_features: ['normalized_lap', 'average_normalized_lap', 'lap_progress', 'current_position_norm', 'normalized_driver_standing', 'normalized_fastest_qualifying', 'position_quali', 'normalized_driver_elo' , 'amount_of_wins', 'points_team']
-  tensorboard: true   #todo
+  tensorboard: true
 
 # ===============================
 # Evaluation Configuration
 # ===============================
 
 evaluation:
-  enabled: true
+  enabled: false
   show_plot: true 
 
 # ===============================
 # Inference Configuration
 # ===============================
 inference:
-  enabled: false
+  enabled: true
   api: true
   streamlit: true
 
@@ -48,4 +48,4 @@ inference:
 # ===============================
 
 logger:
-  level: "INFO"  # Options: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+  level: "CRITICAL"  # Options: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

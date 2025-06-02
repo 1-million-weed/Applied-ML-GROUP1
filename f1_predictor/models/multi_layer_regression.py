@@ -14,8 +14,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 class MultiLayerRegression(Model):
-    def __init__(self, type: str = "MultiLayerRegression", input_shape: int = 9, num_classes: int = 20) -> None:
+    def __init__(self, type: str = "MultiLayerRegression", input_shape: int = 9, num_classes: int = 20, tensor_board: bool = True) -> None:
         super().__init__(type)
+        self.tensor_board = tensor_board
         self.num_classes = num_classes
         inputs = keras.Input(shape=(input_shape,))
         x = keras.layers.Dense(32, activation='relu')(inputs)
@@ -61,7 +62,8 @@ class MultiLayerRegression(Model):
         )
         
         # Start TensorBoard in a separate thread
-        self.run_tensorboard()
+        if self.tensor_board:
+            self.run_tensorboard()
 
 
     def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:

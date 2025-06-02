@@ -90,7 +90,7 @@ class MultiLayerPerceptron(Model):
     :param Model: _description_
     :type Model: _type_
     """
-    def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20) -> None:
+    def __init__(self, type: str = "MultiLayerPerceptron", input_shape: int = 4, num_classes: int = 20, tensor_board: bool = True) -> None:
         """
         Constructor method to initialize the MultiLayerPerceptron model for classification.
 
@@ -103,6 +103,7 @@ class MultiLayerPerceptron(Model):
         """
         super().__init__(type)
         self.num_classes = num_classes
+        self.tensor_board = tensor_board
         self._model = keras.Sequential([
             keras.Input(shape=(input_shape,)),
             #keras.layers.Dense(200, activation='relu', kernel_regularizer=keras.regularizers.l2(0.05)),
@@ -168,7 +169,8 @@ class MultiLayerPerceptron(Model):
             callbacks=[early_stopping, tensorboard_callback]
         )
         # Start TensorBoard in a separate thread
-        self.run_tensorboard()
+        if self.tensor_board:
+            self.run_tensorboard()
 
 
     def predict(self, observations: np.ndarray, return_zero_indexed: bool = False, round:bool = True) -> np.ndarray:

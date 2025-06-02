@@ -68,6 +68,7 @@ class Pipeline:
         self.train_model = self.training_config['enabled']
         self.test_model = eval_config['enabled']
         self.run_model = inference_config['enabled']
+        self.tensor_board = training_config['tensorboard']
 
         self.api = inference_config['api']
         self.streamlit = inference_config['streamlit']
@@ -133,9 +134,9 @@ class Pipeline:
         elif self.model_name == "RandomForestClassifier":
             model = RandomForest()
         elif self.model_name == "MultiLayerPerceptron":
-            model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]))
+            model = MultiLayerPerceptron(input_shape=len(self.training_config["training_features"]), tensor_board=self.tensor_board)
         elif self.model_name == "MultiLayerRegression":
-            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]))
+            model = MultiLayerRegression(input_shape=len(self.training_config["training_features"]), tensor_board=self.tensor_board)
         elif self.model_name == "RandomModel":
             model = RandomModel()
 
