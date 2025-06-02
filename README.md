@@ -43,6 +43,7 @@ All changeable parameters are stored in the `config.py` file, so you can easily 
    ```bash
    streamlit run main.py
    ```
+   Then head over to 'http://localhost:8501' to acces our streamlit api demo.
 
 ## THE CONFIG FILE
 
@@ -71,7 +72,7 @@ Everything in this project is configurable through the `config.py` file. This in
 The API provides several endpoints to interact with the model:
 - **GET /**: API Health check
 - **GET /meetings**: List of all meetings from the current season
-- **GET /meetings/full**: List of all meetings with full details
+- **GET /meetings/{meeting_id}/max-laps**: List the maximum amount of laps in a race
 - **GET /docs**: Swagger UI documentation
 
 - **POST /predict**: Predict the outcome
