@@ -92,27 +92,37 @@ class MultiLayerRegression(Model):
             
         return predicted_positions.flatten()
     
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> None:
-       
-       mean_squared_error, mean_absolute_error = self._model.evaluate(x_test, y_test)
-       print(f"Mean Squared Error: {mean_squared_error}")
-       print(f"Mean Absolute Error: {mean_absolute_error}")
-       y_pred = self.predict(x_test)
-       self.plot_confusion_matrix(y_test, y_pred)
-       accuracy = accuracy_score(y_test, y_pred)
-       precision = precision_score(y_test, y_pred, average="weighted")
-       recall = recall_score(y_test, y_pred, average="weighted")
-       f1 = f1_score(y_test, y_pred, average="weighted")
-       metrics = {
-              "mean_squared_error": mean_squared_error,
-                "mean_absolute_error": mean_absolute_error,
-                "accuracy": accuracy,
-                "precision": precision,
-                "recall": recall,
-                "f1_score": f1
-       }
-       print(metrics)
-       return metrics
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> None:
+        """
+        Evaluate the model and optionally display plots.
+        
+        Args:
+            x_test: Test features as a numpy array.
+            y_test: True labels as a numpy array.
+            show_plots: If True, display plots (confusion matrix).
+        """
+        mean_squared_error, mean_absolute_error = self._model.evaluate(x_test, y_test)
+        print(f"Mean Squared Error: {mean_squared_error}")
+        print(f"Mean Absolute Error: {mean_absolute_error}")
+        y_pred = self.predict(x_test)
+        
+        if show_plots:
+            self.plot_confusion_matrix(y_test, y_pred)
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average="weighted")
+        recall = recall_score(y_test, y_pred, average="weighted")
+        f1 = f1_score(y_test, y_pred, average="weighted")
+        metrics = {
+            "mean_squared_error": mean_squared_error,
+            "mean_absolute_error": mean_absolute_error,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1
+        }
+        print(metrics)
+        return metrics
 
     def plot_loss(self) -> None:
         """

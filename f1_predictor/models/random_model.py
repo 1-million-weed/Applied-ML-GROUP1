@@ -70,7 +70,7 @@ class RandomModel(Model):
             
         return predictions
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> dict:
         """
         Evaluate the random model on test data.
 
@@ -78,6 +78,8 @@ class RandomModel(Model):
         :type x_test: np.ndarray
         :param y_test: Test target values.
         :type y_test: np.ndarray
+        :param show_plots: If True, displays the confusion matrix plot.
+        :type show_plots: bool
         :return: Evaluation metrics.
         :rtype: dict
         """
@@ -92,8 +94,9 @@ class RandomModel(Model):
         accuracy = np.mean(predictions == y_test)
         print(f"Random predictor accuracy: {accuracy:.4f}")
         
-        # Plot confusion matrix for visualization
-        self.plot_confusion_matrix(y_test, predictions)
+        # Plot confusion matrix for visualization if show_plots is True
+        if show_plots:
+            self.plot_confusion_matrix(y_test, predictions)
         
         return {"accuracy": accuracy}
 

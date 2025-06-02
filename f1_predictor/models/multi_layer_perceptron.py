@@ -191,14 +191,16 @@ class MultiLayerPerceptron(Model):
             
         return positions
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> dict:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> dict:
         """
         Evaluate the model on the test data.
 
         :param x_test: Test features.
         :type x_test: np.ndarray
-        :param y_test:  Test target values(one-hot encoded).
+        :param y_test: Test target values (one-hot encoded).
         :type y_test: np.ndarray
+        :param show_plots: If True, display plots (confusion matrix and loss curve).
+        :type show_plots: bool
         :return: Evaluation metrics.
         :rtype: dict
         """
@@ -216,9 +218,16 @@ class MultiLayerPerceptron(Model):
                 y_test_array = y_test_array - 1
                 
             y_test = to_categorical(y_test_array, num_classes=self.num_classes)
-        self.plot_confusion_matrix(y_test, self.predict(x_test))
+        
+        if show_plots:
+            self.plot_confusion_matrix(y_test, self.predict(x_test))
+        
         loss, accuracy = self._model.evaluate(x_test, y_test)
         print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
+        
+        if show_plots:
+            self.plot_loss()
+        
         return {"loss": loss, "accuracy": accuracy}
         
 

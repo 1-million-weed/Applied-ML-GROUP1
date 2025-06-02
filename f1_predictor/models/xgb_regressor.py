@@ -138,7 +138,7 @@ class XGBRegressor(Model):
         plt.ylabel("Features")
         plt.show()
 
-    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray) -> Dict[str, float]:
+    def evaluate(self, x_test: np.ndarray, y_test: np.ndarray, show_plots: bool = True) -> Dict[str, float]:
         """
         Evaluate the model on the test data and print the mse.
 
@@ -146,6 +146,8 @@ class XGBRegressor(Model):
         :type x_test: np.array
         :param y_test: Test target values.
         :type y_test: np.array
+        :param show_plots: Whether to display plots (confusion matrix and feature importance).
+        :type show_plots: bool
         """
         y_pred = self.predict(x_test, round=False)
         mse = np.mean((y_test - y_pred) ** 2)
@@ -156,7 +158,8 @@ class XGBRegressor(Model):
         
         # Get rounded predictions for confusion matrix
         y_pred_rounded = self.predict(x_test, round=True)
-        self.plot_confusion_matrix(y_test, y_pred_rounded)
+        if show_plots:
+            self.plot_confusion_matrix(y_test, y_pred_rounded)
 
         print(f"Mean Squared Error: {mse}")
         return {

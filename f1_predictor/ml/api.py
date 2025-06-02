@@ -193,21 +193,6 @@ class API:
                 # TODO: add more meet information
             }
             
-        @self.app.get("/meetings/full", tags=["Info"])
-        async def get_full_meetings():
-            """Get list of F1 meetings with their full official names.
-            
-            Returns the complete official race names with sponsors and year included.
-            
-            - :return: Dictionary containing full race names mapped to meeting IDs
-            - :rtype: dict
-            """
-            self.logger.info("Fetching full meeting names")
-            full_names = RawInputData.get_full_meeting_names()
-            return {
-                "full_meetings": full_names,
-                "total_count": len(full_names)
-            }
 
         @self.app.get("/meetings/{meeting_id}/max-laps", tags=["Info"])
         async def get_max_laps(meeting_id: int):

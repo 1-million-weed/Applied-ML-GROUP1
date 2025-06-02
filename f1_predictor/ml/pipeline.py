@@ -62,6 +62,7 @@ class Pipeline:
         self.test_plots = eval_config['show_plot']
 
         self.gen_features = dataset_config['generate']
+        self.show_elo_plots = dataset_config['elo_plots']
         self.gen_2025 = dataset_config['get_2025_data']
         self.calculte_elo = dataset_config['calculate_elo']
         self.train_model = self.training_config['enabled']
@@ -154,7 +155,7 @@ class Pipeline:
         Evaluates the trained model on validation data and return metrics
         """    
         model = self.model_manager.load_model()
-        metrics = model.evaluate(*self._load_validation_data())
+        metrics = model.evaluate(*self._load_validation_data(), show_plots=self.test_plots)
 
     def make_features(self) -> None:
         """
@@ -203,7 +204,7 @@ class Pipeline:
             app.display()
 
     def elo_calculator(self):
-        analyzer = F1EloAnalyzer()
+        analyzer = F1EloAnalyzer(show_plots=self.show_elo_plots)
     
         # Run complete analysis
         results = analyzer.run_complete_analysis()
