@@ -66,11 +66,11 @@ class DriverPrediction(BaseModel):
 
     - :param position: Predicted final position (1-20)
     - :type position: int
-    - :param racer_name: Driver name
-    - :type racer_name: str
+    - :param racer_id: Driver Id
+    - :type racer_id: int
     """
     position: int = Field(..., ge=1, le=20, description="Predicted final position (1-20)")
-    racer_name: str = Field(..., description="Driver name")
+    racer_id: int = Field(..., description="Driver Id")
 
 
 class PredictionResponse(BaseModel):
@@ -91,8 +91,8 @@ class PredictionResponse(BaseModel):
         schema_extra = {
             "example": {
                 "predictions": [
-                    {"position": 1, "racer_name": "Max Verstappen"},
-                    {"position": 2, "racer_name": "Lewis Hamilton"}
+                    {"position": 1, "racer_id": "1"},
+                    {"position": 2, "racer_id": "44"}
                 ],
                 "race_info": {
                     "meeting_name": "Australian GP",
@@ -129,10 +129,6 @@ class API:
 
         self.model = model
         meeting_names = RawInputData.get_full_meeting_names()
-        formatted_meetings = "\n".join(
-            f"- `{key}`: {value}" for key, value in meeting_names.items()
-        )
-
         self.logger.info("Initializing FastAPI with model: %s", model.__class__.__name__)
         self.app = FastAPI(
             title="🏎️ F1 Race Predictor API",
@@ -146,7 +142,7 @@ class API:
             - **Multiple Circuits**: Support for 8 major F1 circuits (races done this year)
 
             ### Supported Meetings:
-            {formatted_meetings}
+            {meeting_names}
 
             ### Usage:
             1. Select a meeting from the supported options (see `/meetings` endpoint)
@@ -299,7 +295,7 @@ class API:
                 
                 driver_predictions.append(DriverPrediction(
                     position=position_int,
-                    racer_name=str(driver_id)
+                    racer_id=str(driver_id)
                 ))
             
             # Sort predictions by position

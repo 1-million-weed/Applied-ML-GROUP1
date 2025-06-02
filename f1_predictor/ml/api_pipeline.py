@@ -75,14 +75,10 @@ class APIpipeline:
 
         self.logger.info("Predictions before sorting", extra={"unsorted_predictions": predictions})
         # Sort by prediction values and create a new dict
-        sorted_predictions = sorted(predictions.items(), key=lambda item: item[1])
-        self.logger.info("Sorted predictions", extra={"sorted_predictions": sorted_predictions})
-
-        if not return_zero_indexed:
-            predictions = {k: v + 1 for k, v in sorted_predictions}
-        else:
-            predictions = {k: v for k, v in sorted_predictions}
-            
+        sorted_predictions = {k: v for k, v in sorted(predictions.items(), key=lambda item: item[1])}
+        predictions = {}
+        for i, (k, v) in enumerate(sorted_predictions.items()):
+            predictions[k] = i if return_zero_indexed else i + 1
         return predictions
     
 

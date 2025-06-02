@@ -1,6 +1,5 @@
 from .page import Page
 from .pages.api_demo import ApiDemoPage
-from .pages.dream_big_demo import DreamBigDemoPage
 import streamlit as st
 
 class HomePage(Page):
@@ -8,7 +7,6 @@ class HomePage(Page):
         super().__init__("Home")
         self.pages = {
             "API Demo": ApiDemoPage(),
-            "Dream Big Demo": DreamBigDemoPage()
         }
 
     def display_sidebar(self):

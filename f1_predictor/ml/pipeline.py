@@ -16,6 +16,7 @@ from ..app.homepage import HomePage
 import pandas as pd
 import uvicorn 
 import threading
+import time
 
 class Pipeline:
     """The pipeline of the model for Formula 1 predictions.
