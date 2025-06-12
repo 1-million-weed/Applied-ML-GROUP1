@@ -20,7 +20,7 @@ dataset:
 # Training Configuration
 # ===============================
 training:
-  enabled: false
+  enabled: true
   test_size: 0.2
   show_plot: true 
   ground_truth: "finishing_position"
@@ -32,14 +32,14 @@ training:
 # ===============================
 
 evaluation:
-  enabled: false
+  enabled: true
   show_plot: true 
 
 # ===============================
 # Inference Configuration
 # ===============================
 inference:
-  enabled: true
+  enabled: false
   api: true
   streamlit: true
 

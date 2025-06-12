@@ -112,7 +112,7 @@ class MultiLayerPerceptron(Model):
         ])
 
         for _ in range(5):
-            self._model.add(keras.layers.Dense(256, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
+            self._model.add(keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.00001)))
 
         # Add the output layer
         self._model.add(keras.layers.Dense(num_classes, activation='softmax'))  # Output layer for classification
