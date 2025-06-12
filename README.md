@@ -78,6 +78,10 @@ The API provides several endpoints to interact with the model:
 - **POST /predict**: Predict the outcome
 
 
+## Notable references:
+
+- [Elo calculation code](https://www.kaggle.com/code/lorenzojayd/elo-system-in-formula-1/notebook)
+
 ## Project Structure
 
 ```bash
