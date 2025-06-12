@@ -49,3 +49,10 @@ inference:
 
 logger:
   level: "CRITICAL"  # Options: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+# ===============================
+# Unit Tests Configuration
+# ===============================
+
+unit_tests: false

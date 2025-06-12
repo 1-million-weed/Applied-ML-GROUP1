@@ -1,5 +1,7 @@
 import yaml
 import logging
+import pytest
+import sys
 
 from f1_predictor.ml.pipeline import Pipeline
 from mylogger import setup_logging
@@ -36,6 +38,10 @@ def Formula1Predictor():
     logger_config = config["logger"]
     setup_logging(log_level=logger_config['level'])
     logger.info("logger initialized")
+    if config["unit_tests"]:
+        logger.warning("Running in unit test mode, skipping pipeline execution.")
+        retcode = pytest.main(["-q", "--disable-warnings"])
+        sys.exit(retcode)
     pipeline = Pipeline(
         model_config=model_config,
         dataset_config=dataset_config,
